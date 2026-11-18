@@ -29,7 +29,8 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Local pitch / demo media (kept outside commits)
-pitch/
+# Local pitch / demo media (PDF deck is the only tracked pitch artifact)
+pitch/*
+!pitch/CampusFlow_AI_Pitch_Deck.pdf
 *.pptx
 *.mp4

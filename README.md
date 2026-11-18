@@ -7,6 +7,7 @@
 | 🎯 **Hackathon Track** | Theme 2 — *AI for Education* (Prompt War 2026) |
 | 🌐 **Live Deployed App** | https://campusflow-ai-five.vercel.app |
 | 🩺 **API health** | https://campusflow-api-598899050820.asia-south1.run.app/health |
+| 📑 **Pitch deck (PDF)** | [Download / read CampusFlow_AI_Pitch_Deck.pdf](./pitch/CampusFlow_AI_Pitch_Deck.pdf) — features, workflows, architecture |
 | ⚡ **60-second judge path** | Open the live app → **Arjun** → My interests → **Explain & quiz me** on the FastAPI card → switch **Faculty** / **Placement** in the top bar |
 | 🔁 **Instant Persona Switcher** | Top bar: **Arjun / Faculty / Placement** — one click, seeded data, no re-signup |
 | 🔑 **Demo password** | `CampusFlow@2026` (one-click buttons on the login page) |
