@@ -4,12 +4,13 @@
 
 | | |
 | --- | --- |
+| 🌐 **Live Deployed App** | https://campusflow-ai-five.vercel.app |
+| 🩺 **Live API Health** | https://campusflow-api-598899050820.asia-south1.run.app/health |
 | 🎯 **Hackathon Track** | Theme 2 — *AI for Education* (Prompt War 2026) |
-| ⚡ **60-second judge path** | `frontend`: `npm run dev` · `backend`: `uvicorn` on `:8000` · open `http://localhost:3000` |
-| 🩺 **API health** | `http://127.0.0.1:8000/health` (also works after Cloud Run deploy) |
 | 🔁 **Instant Persona Switcher** | Top bar: **Arjun / Faculty / Placement** — one click, seeded data, no re-signup |
 | 🔑 **Demo password** | `CampusFlow@2026` (one-click buttons on the login page) |
 | 🧪 **Evidence** | **71** backend tests · `tsc` + `next build` clean · SSRF + session auth + Gemini 503 fallbacks |
+| ⚡ **Local fallback** | `frontend`: `npm run dev` · `backend`: `uvicorn` on `:8000` |
 
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs)
