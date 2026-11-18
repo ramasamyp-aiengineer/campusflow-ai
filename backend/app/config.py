@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     demo_password: str = "CampusFlow@2026"
     session_hours: int = 12
     allow_persona_header: bool = False
+    # Used to hide fallback quiz answer positions from the public message id.
+    app_secret: str = "campusflow-dev-secret"
 
     @property
     def origins(self) -> list[str]:

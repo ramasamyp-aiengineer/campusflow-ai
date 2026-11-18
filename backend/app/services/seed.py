@@ -20,6 +20,20 @@ def _skill(db: Session, student_id: int, name: str, score: int, tickets: list[st
     )
 
 
+def _pass_feedback(skill: str, score: int = 82) -> str:
+    return json.dumps(
+        {
+            "refused_direct_solution": False,
+            "diagnosed_gap": f"Seeded review for {skill}.",
+            "guiding_question": "Which edge case still needs a check?",
+            "readiness_score": score,
+            "checks": [],
+            "actionable_fixes": [],
+            "remediation_title": None,
+        }
+    )
+
+
 def _lwi(db: Session, **kwargs) -> LearningWorkItem:
     rubric = kwargs.pop("rubric")
     item = LearningWorkItem(rubric_criteria=json.dumps(rubric), **kwargs)
@@ -316,6 +330,7 @@ def seed_if_empty(db: Session) -> None:
         prerequisite_id=fd.id,
         co_tag="CO4",
         rubric=DIST_RUBRIC,
+        ai_feedback_json=_pass_feedback("Distributed Systems"),
     )
     _lwi(
         db,
@@ -361,6 +376,7 @@ def seed_if_empty(db: Session) -> None:
         prerequisite_id=epic.id,
         co_tag="CO3",
         rubric=DS_RUBRIC,
+        ai_feedback_json=_pass_feedback("Data Structures"),
     )
     _lwi(
         db,
@@ -502,6 +518,7 @@ def seed_if_empty(db: Session) -> None:
             "Explains where the map stays if a reversal is required",
             "Names the test that would catch a regression",
         ],
+        ai_feedback_json=_pass_feedback("Security Engineering"),
     )
 
     basics = _lwi(

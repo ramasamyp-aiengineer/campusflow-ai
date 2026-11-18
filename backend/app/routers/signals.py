@@ -26,6 +26,7 @@ from app.schemas import (
 from app.services.board import audit, index_items, lwis_for, persona_user, sprint_out, to_lwi
 from app.services.story_actions import (
     BadgeContext,
+    QuizLocked,
     answer_quiz,
     build_explainer,
     create_story_task,
@@ -294,7 +295,10 @@ def quiz_story(
     message = _own_message(db, student, message_id)
     if not message.explainer_json:
         raise HTTPException(status_code=409, detail="Open the explainer before answering the check question")
-    result = answer_quiz(db, student, message, body.choice)
+    try:
+        result = answer_quiz(db, student, message, body.choice)
+    except QuizLocked as locked:
+        raise HTTPException(status_code=429, detail=f"Wait {locked.seconds}s before another attempt") from locked
     if result["xp_awarded"]:
         audit(db, student, "signals.quiz", f"story={message.id} {result['skill']} +{result['xp_awarded']}")
     db.commit()

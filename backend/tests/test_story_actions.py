@@ -106,20 +106,18 @@ def test_explain_and_quiz_award_xp_once(client: TestClient):
     assert len(explainer["options"]) == 3
     assert "answer_index" not in explainer and "why" not in explainer
 
-    passed = None
-    wrong = 0
-    for choice in range(len(explainer["options"])):
-        result = client.post(f"/api/v1/signals/messages/{story['id']}/quiz", headers=STUDENT, json={"choice": choice}).json()
-        if result["correct"]:
-            passed = result
-            break
-        wrong += 1
-        assert result["xp_awarded"] == 0
-    assert passed is not None and wrong < 3
+    from app.database import SessionLocal
+    from app.models import SignalMessage
+    import json
+
+    with SessionLocal() as db:
+        answer = json.loads(db.get(SignalMessage, story["id"]).explainer_json)["card"]["answer_index"]
+    passed = client.post(f"/api/v1/signals/messages/{story['id']}/quiz", headers=STUDENT, json={"choice": answer}).json()
+    assert passed["correct"] is True
     assert passed["skill"] == "FastAPI"
     assert passed["xp_awarded"] == 2
 
-    repeat = client.post(f"/api/v1/signals/messages/{story['id']}/quiz", headers=STUDENT, json={"choice": choice}).json()
+    repeat = client.post(f"/api/v1/signals/messages/{story['id']}/quiz", headers=STUDENT, json={"choice": answer}).json()
     assert repeat["correct"] is True
     assert repeat["xp_awarded"] == 0
     assert repeat["already_passed"] is True

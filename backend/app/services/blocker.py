@@ -1,4 +1,9 @@
+import json
+
 from app.models import LearningWorkItem
+
+PASS_SCORE = 75
+ACTIVE = {"IN_PROGRESS", "AI_REVIEW", "MASTERED"}
 
 
 def block_reason(
@@ -20,13 +25,28 @@ def block_reason(
     return block_reason(parent, by_id, seen)
 
 
-ACTIVE = {"IN_PROGRESS", "AI_REVIEW", "MASTERED"}
+def passing_readiness(item: LearningWorkItem) -> int | None:
+    """Return the stored readiness score when a non-refused evaluation cleared the bar."""
+    if not item.ai_feedback_json:
+        return None
+    try:
+        feedback = json.loads(item.ai_feedback_json)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(feedback, dict) or feedback.get("refused_direct_solution"):
+        return None
+    score = feedback.get("readiness_score")
+    if not isinstance(score, int) or score < PASS_SCORE:
+        return None
+    return score
 
 
 def assert_can_enter(item: LearningWorkItem, new_status: str, by_id: dict[int, LearningWorkItem]) -> str | None:
     reason = block_reason(item, by_id)
     if reason and new_status in ACTIVE:
         return reason
+    if new_status in {"AI_REVIEW", "MASTERED"} and passing_readiness(item) is None:
+        return f"AI Review and Mastery need a scored submission of {PASS_SCORE} or above"
     if new_status == "MASTERED" and item.status != "AI_REVIEW":
         return "Mastery is recorded only after the ticket has been through AI Review"
     return None

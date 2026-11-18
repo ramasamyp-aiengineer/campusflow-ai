@@ -287,7 +287,7 @@ def _atom_link(node: ElementTree.Element, atom: str) -> str:
 
 
 def parse_feed(xml_text: str) -> list[RawItem]:
-    if DECLARATION.search(xml_text[:4096]):
+    if DECLARATION.search(xml_text):
         raise ValueError("The feed declares a DOCTYPE or entities, which are refused")
     try:
         root = ElementTree.fromstring(xml_text)

@@ -12,7 +12,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs)
 ![Gemini](https://img.shields.io/badge/Gemini-flash%20%2B%20flash--lite-4285F4?logo=googlegemini&logoColor=white)
-![Tests](https://img.shields.io/badge/backend%20tests-64%20passing-0E7C66)
+![Tests](https://img.shields.io/badge/backend%20tests-71%20passing-0E7C66)
 
 ---
 
@@ -73,12 +73,12 @@ Every AI call goes through one guarded path: untrusted text is redacted, wrapped
 - **Prerequisite blocker:** A ticket cannot start until its prerequisite is mastered. Example: `CS301-106 Query optimization` stays locked until `CS301-104 SQL joins lab` is mastered.
 
 ### B. Anti-cheating Socratic unblocker and rubric evaluator
-- **Unblocker:** Returns a diagnosed gap and one guiding question, never code. If Gemini's reply looks like a solution (code fences, `SELECT`, `def`, long blocks), it is discarded and a per-skill Socratic prompt is used instead.
+- **Unblocker:** Returns a diagnosed gap and one guiding question, never code. Heuristic output checks (case-insensitive SQL/code patterns, fences, long blocks, and `actionable_fixes`) discard model text that looks like a finished answer; phrase-based refusal catches common "do it for me" asks. These are heuristics, not a perfect jailbreak wall.
 - **Rubric auditor:** Scores a draft against the ticket's rubric (`readiness_score` from 0 to 100), with a pass/fail note per criterion.
 - **Direct-solution requests are refused:** The API strips PII and files a 15-minute remediation `SUBTASK` instead of handing over the answer.
 
 ### C. Live verified skill graph and placement JD copilot
-- **Evidence-backed skill nodes:** A node rises only when a linked ticket reaches `MASTERED` and carries evidence hashes.
+- **Evidence-backed skill nodes:** Skills rise only after an AI-reviewed submission clears readiness ≥ 75. Dragging into AI Review or Mastered without that score is refused. Each awarded ticket is recorded once with a SHA-256 evidence hash, so the same ticket cannot farm proficiency.
 - **Placement view:** The Placement Cell filters students by a verified-skill bar and keeps CGPA visible, so a high grade without proof stands out.
 - **JD copilot:** Matches a job description against verified scores and injects a **14-day prep sprint** (`PLACE-1xx` tickets) onto the board.
 
@@ -107,7 +107,7 @@ Open the live app. The **sign-in page** has one-click demo accounts for Arjun K.
 | --- | --- |
 | **Innovation & Creativity** | News a student follows becomes graded labs and XP on their own skill graph (signal → `LAB-1xx` → mastery). Cross-feed story fusion. A drift radar that turns cohort reading into curriculum feedback. |
 | **Problem Relevance** | Replaces PDF syllabi and spreadsheets with a sprint board. Refuses copy-paste answers and coaches with Socratic questions. Flags at-risk students from sprint velocity before exams. Replaces CGPA screens with verified skill evidence. |
-| **Technical Implementation** | FastAPI + Pydantic v2 schemas on every model reply. Two-model Gemini chain with a deterministic fallback. SSRF-hardened feed fetcher. Hashed sessions with role-based access. 64 backend tests, plus clean `tsc` and production build. |
+| **Technical Implementation** | FastAPI + Pydantic v2 schemas on every model reply. Two-model Gemini chain with a deterministic fallback. SSRF-hardened feed fetcher. Hashed sessions with role-based access. 71 backend tests, plus clean `tsc` and production build. |
 | **Practical Impact** | Works with no API key (deterministic engine), so it survives outages and zero budget. Uses public RSS feeds and one-click demo accounts. Ships with a Dockerfile, a Cloud Run-ready image, and an audit trail of every AI action. |
 
 ## 6. Engineering Quality, Security, and Production Resilience
@@ -125,18 +125,18 @@ Open the live app. The **sign-in page** has one-click demo accounts for Arjun K.
   - Explainers cached during an outage upgrade to Gemini when next opened, unless the quiz is already passed.
 - **Prompt-injection and integrity guardrails** (`backend/app/security/`):
   - Syllabi, submissions, job descriptions, and RSS article text are neutralized and wrapped in `<student_submission>` delimiters.
-  - Generated hints are scanned for solution code.
-  - Quiz answer keys never leave the server, and grading always uses the stored card, so a cached upgrade can't change an answer mid-attempt.
+  - Generated hints and fixes are scanned for solution-shaped text on unblock and evaluate replies.
+  - Quiz answer keys never leave the server. Fallback answer positions are derived from `APP_SECRET`, not the public message id, and a wrong answer locks the card briefly. Grading always uses the stored card, so a cached upgrade can't change an answer mid-attempt.
 - **Authentication and access control:**
   - Passwords are salted `scrypt` hashes. Session tokens are random and stored only as SHA-256 hashes, last `SESSION_HOURS`, and are revoked on sign-out.
   - The role comes from the account, never from the browser, and wrong email and wrong password get the same answer.
 - **Privacy by design:** Emails, phone numbers, and roll numbers are redacted before any model call. The drift radar and topic pulse aggregate across the cohort and never show names.
 - **Operational safety:**
-  - Rate limits: AI routes 10/min, feed fetches 6/min, login 5/min.
+  - Rate limits: AI routes 10/min, feed fetches 6/min, login 20/min. The container trusts Cloud Run proxy headers (`--forwarded-allow-ips=*`) so limits key off the real client.
   - Security headers: `nosniff`, `X-Frame-Options: DENY`, `no-referrer`.
   - CORS uses an allow-list, and `/docs` is hidden in production.
   - The container runs as a non-root user, and every AI action writes an audit event.
-- **Tests:** `pytest` gives **64 passing backend tests**, covering SSRF cases, redirects, oversized feeds, entities, injection, RBAC, sessions, story fusion, idempotent tasks, quiz XP, the drift radar, the dashboard, the cold-start demo data, and a simulated Gemini 503 across every AI feature. TypeScript `tsc --noEmit` and `next build` pass clean.
+- **Tests:** `pytest` gives **71 passing backend tests**, covering SSRF cases, redirects, oversized feeds, entities, injection, RBAC, sessions, story fusion, idempotent tasks, quiz XP, mastery farming paths, the drift radar, the dashboard, the cold-start demo data, and a simulated Gemini 503 across every AI feature. TypeScript `tsc --noEmit` and `next build` pass clean.
 
 ## 7. Tech Stack and Local Setup
 
@@ -190,7 +190,7 @@ Copy-Item .env.example .env        # optionally set GEMINI_API_KEY
 
 The first start creates `campusflow.db`, seeds the cohort, and creates the three demo logins.
 
-**Run the test suite** (64 tests):
+**Run the test suite** (71 tests):
 
 ```powershell
 cd backend
@@ -254,7 +254,12 @@ docker compose up --build          # API on http://localhost:8000 (container por
 
 ### Known limits before a real campus rollout
 
+- **Live URLs:** Insert the deployed frontend and API health links at the top of this README after Cloud Run / Vercel go live.
 - **Database:** SQLite on Cloud Run is lost on restart, so point `DATABASE_URL` at Postgres.
+- **Demo identity:** The three sign-in buttons share `DEMO_PASSWORD`. Every student-role session maps to the seeded Arjun persona for the pitch; this is not yet multi-tenant onboarding.
+- **Fallback scoring:** Without a Gemini key, rubric scores are keyword/heuristic. A short keyword salad cannot clear 75, but the grader is not a human.
+- **Socratic guards:** Refusal phrases and solution-shaped output checks are heuristics. Delimiters, schema validation, and the output discard are the real backstops.
+- **Drift radar:** Stories are counted per message. One student with a self-hosted feed can skew cohort bars; treat the radar as a demo signal, not a poison-proof statistic.
 - **Feed polling:** The 8-hour feed loop runs inside the API process. Move it to Cloud Scheduler when running more than one instance.
 - **Sign-in:** Replace the shared demo password with per-user credentials, password reset, and campus SSO.
 - **Dependencies:** Upgrade to Next.js 16 to clear the PostCSS advisory `npm audit` reports inside Next 15.

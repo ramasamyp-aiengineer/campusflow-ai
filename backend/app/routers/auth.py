@@ -37,7 +37,7 @@ def _session_user(db: Session, authorization: str) -> tuple[str, User]:
 
 
 @router.post("/login", response_model=LoginOut)
-@limiter.limit("5/minute")
+@limiter.limit("20/minute")
 def login(request: Request, response: Response, body: LoginIn, db: Session = Depends(get_db)) -> LoginOut:
     user = authenticate(db, body.email, body.password)
     if user is None or user.role not in PERSONA_FOR_ROLE:

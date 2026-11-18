@@ -47,6 +47,7 @@ def _ensure_signal_columns() -> None:
             "task_lwi_id": "INTEGER REFERENCES learning_work_items(id)",
             "explainer_json": "TEXT DEFAULT ''",
             "quiz_passed": "BOOLEAN DEFAULT 0",
+            "quiz_lock_until": "VARCHAR(40) DEFAULT ''",
         }
         for name, definition in columns.items():
             if name not in names:

@@ -38,7 +38,7 @@ from app.security.auth import PERSONA_FOR_ROLE, session_for
 from app.security.pii import redact_pii
 from app.security.pipeline import guard_untrusted
 from app.services.ai import plan_evaluation, plan_jd, plan_sprint, plan_unblock
-from app.services.blocker import assert_can_enter
+from app.services.blocker import assert_can_enter, passing_readiness
 from app.services.board import (
     audit,
     blocked_core_count,
@@ -268,9 +268,10 @@ def move_status(
     entering_mastery = body.status == "MASTERED" and item.status != "MASTERED"
     item.status = body.status
     if entering_mastery:
-        feedback = loads(item.ai_feedback_json, {})
-        score = feedback.get("readiness_score") if isinstance(feedback, dict) else None
-        boost_skill(db, student, item.skill_tag, item.ticket_code, score if isinstance(score, int) else 75)
+        score = passing_readiness(item)
+        if score is None:
+            raise HTTPException(status_code=409, detail="Mastery needs a scored submission of 75 or above")
+        boost_skill(db, student, item.skill_tag, item.ticket_code, score)
     audit(db, student, "lwi.status", f"{item.ticket_code} -> {body.status}")
     db.commit()
     db.refresh(item)
@@ -457,11 +458,13 @@ def evaluate(
     else:
         score = result.readiness_score or 0
         boost_skill(db, student, item.skill_tag, item.ticket_code, score)
+    item.ai_feedback_json = result.model_dump_json()
+    if not result.refused_direct_solution:
+        score = result.readiness_score or 0
         items = lwis_for(db, student.id)
         by_id = index_items(items)
         if score >= 75 and item.status in {"BACKLOG", "IN_PROGRESS"} and not assert_can_enter(item, "AI_REVIEW", by_id):
             item.status = "AI_REVIEW"
-    item.ai_feedback_json = result.model_dump_json()
     audit(
         db,
         student,
@@ -647,7 +650,7 @@ def posture(persona: str = Depends(current_persona), db: Session = Depends(get_d
             {"name": "Socratic guardrail", "detail": "Direct-solution requests never receive finished code. A 15-minute remediation ticket is filed instead."},
             {"name": "Prompt boundary", "detail": "Syllabi, submissions, and job descriptions are neutralized and wrapped in student_submission tags."},
             {"name": "PII redaction", "detail": "Emails, phone numbers, and roll numbers are replaced with tokens before any model call. Raw values are not logged."},
-            {"name": "Sign-in", "detail": "Every route needs a session token. Passwords are salted scrypt hashes, tokens are stored hashed, sign-out revokes them, and login is limited to 5 tries a minute."},
+            {"name": "Sign-in", "detail": "Every route needs a session token. Passwords are salted scrypt hashes, tokens are stored hashed, sign-out revokes them, and login is limited to 20 tries a minute."},
             {"name": "RBAC", "detail": "The role comes from the signed-in account, not the browser. Students cannot open faculty views or another student's skill graph."},
             {"name": "Rate limit", "detail": "AI generation routes are limited to 10 requests per minute per IP."},
             {"name": "Secrets", "detail": "The Gemini key is read from the environment. .env.example is the only env file in source control."},

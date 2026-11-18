@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+from datetime import datetime, timedelta, timezone
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.models import LearningWorkItem, SignalMessage, SkillNode, Sprint, User, utcnow
 from app.security.pii import redact_pii
 from app.services.signals import (
@@ -273,6 +276,21 @@ EXPLAIN_HINT = (
 )
 
 
+QUIZ_LOCK_SECONDS = 20
+
+
+class QuizLocked(Exception):
+    def __init__(self, seconds: int):
+        self.seconds = max(1, seconds)
+        super().__init__(f"quiz locked for {self.seconds}s")
+
+
+def _quiz_answer_index(message_id: int, option_count: int = 3) -> int:
+    secret = get_settings().app_secret.strip() or "campusflow-dev-secret"
+    digest = hashlib.sha256(f"{secret}:{message_id}".encode()).hexdigest()
+    return int(digest, 16) % max(1, option_count)
+
+
 def fallback_explainer(message: SignalMessage) -> Explainer:
     body = plain(message.summary or message.brief or message.title)
     sentences = [part.strip() for part in SENTENCE.split(body) if part.strip()]
@@ -281,7 +299,7 @@ def fallback_explainer(message: SignalMessage) -> Explainer:
     others = [topic for topic, _ in TOPICS if topic != correct]
     offset = message.id % len(others)
     distractors = [others[offset], others[(offset + 3) % len(others)]]
-    position = message.id % 3
+    position = _quiz_answer_index(message.id, 3)
     options = distractors[:position] + [correct] + distractors[position:]
     skills = skills_in(story_text(message))
     return Explainer(
@@ -356,12 +374,26 @@ def quiz_skill(db: Session, student: User, names: list[str]) -> SkillNode | None
 
 
 def answer_quiz(db: Session, student: User, message: SignalMessage, choice: int) -> dict:
+    now = datetime.now(timezone.utc)
+    if message.quiz_lock_until:
+        try:
+            locked = datetime.fromisoformat(message.quiz_lock_until)
+        except ValueError:
+            locked = None
+        if locked is not None:
+            if locked.tzinfo is None:
+                locked = locked.replace(tzinfo=timezone.utc)
+            remaining = int((locked - now).total_seconds())
+            if remaining > 0:
+                raise QuizLocked(remaining)
     card, _ = cached_explainer(message) or build_explainer(message)
     correct = choice == card.answer_index
     result = {"correct": correct, "why": card.why if correct else "Not quite. Re-read the core concept and try again.",
               "xp_awarded": 0, "skill": None, "skill_score": None, "already_passed": message.quiz_passed}
     if not correct:
+        message.quiz_lock_until = (now + timedelta(seconds=QUIZ_LOCK_SECONDS)).isoformat()
         return result
+    message.quiz_lock_until = ""
     names = quiz_skills(db, message)
     result["skill"] = names[0] if names else None
     node = quiz_skill(db, student, names)

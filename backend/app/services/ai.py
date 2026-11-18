@@ -14,9 +14,11 @@ T = TypeVar("T", bound=BaseModel)
 
 DIRECT_SOLUTION = re.compile(
     r"\b("
-    r"write the code|give me the code|complete (this |the )?assignment|"
+    r"write the (code|query|sql|solution)|give me the (code|answer|solution)|"
+    r"complete (this |the )?assignment for me|"
     r"full solution|solve this for me|do my homework|write it for me|"
-    r"give me the answer|finish (this|my) (code|assignment|lab)"
+    r"do (the |my )?(whole )?(lab|assignment|homework) for me|"
+    r"finish (this|my) (code|assignment|lab)( for me)?"
     r")\b",
     re.IGNORECASE,
 )
@@ -253,6 +255,10 @@ def fallback_evaluation(submission: str, rubric: list[str], skill: str) -> Evalu
     score += 14 if signals["cost"] else 0
     score += 12 if signals["errors"] else 0
     score += 10 if signals["reasoning"] else 0
+    hits = sum(1 for value in signals.values() if value)
+    # Keyword-only shorts must not clear the mastery bar.
+    if hits < 2 or len(submission.strip()) < 120:
+        score = min(score, 65)
     score = max(0, min(100, score))
     checks: list[RubricCheck] = []
     fixes: list[str] = []
@@ -492,6 +498,9 @@ def plan_evaluation(submission: str, rubric: list[str], skill: str, ticket: str)
     if model is None or (model.refused_direct_solution is False and model.readiness_score is None):
         model = fallback_evaluation(guarded.redacted, rubric, skill)
         transport = "deterministic-fallback"
+    elif model is not None and not model.refused_direct_solution and _solution_leaked(model):
+        model = fallback_evaluation(guarded.redacted, rubric, skill)
+        transport = "deterministic-fallback"
     if model.refused_direct_solution:
         model = model.model_copy(update={"readiness_score": None, "remediation_title": model.remediation_title or f"15-min: isolate one {skill} gap"})
     guarded.meta.transport = transport
@@ -501,7 +510,12 @@ def plan_evaluation(submission: str, rubric: list[str], skill: str, ticket: str)
 def looks_like_full_solution(text: str) -> bool:
     if "```" in text or text.count("\n") > 8:
         return True
-    return bool(re.search(r"\b(def |class |SELECT |function |import )", text))
+    return bool(re.search(r"\b(def |class |SELECT |LEFT JOIN |JOIN\b.+?\bON\b|function |import )", text, re.I))
+
+
+def _solution_leaked(model: EvaluationResult) -> bool:
+    parts = [model.guiding_question, model.diagnosed_gap, *(model.actionable_fixes or [])]
+    return any(looks_like_full_solution(part) for part in parts if part)
 
 
 def plan_unblock(message: str, skill: str, ticket: str) -> tuple[EvaluationResult, GuardedText]:
@@ -519,7 +533,7 @@ def plan_unblock(message: str, skill: str, ticket: str) -> tuple[EvaluationResul
         EvaluationResult,
     )
     guide = GUIDES.get(skill, "What did you expect to happen, and which input first breaks that expectation?")
-    unsafe = model is None or looks_like_full_solution(model.guiding_question) or looks_like_full_solution(model.diagnosed_gap)
+    unsafe = model is None or _solution_leaked(model)
     if unsafe:
         model = EvaluationResult(
             refused_direct_solution=False,

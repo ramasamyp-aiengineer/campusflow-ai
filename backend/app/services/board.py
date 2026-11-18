@@ -254,11 +254,10 @@ def boost_skill(db: Session, student: User, skill: str, ticket_code: str, score:
         return
     delta = max(2, (score - 60) // 5)
     node.proficiency_score = min(100, node.proficiency_score + delta)
-    if score >= 80:
-        tickets.append(ticket_code)
-        node.evidence_tickets = json.dumps(tickets)
-        node.verified_lwi_count = len(tickets)
-        node.evidence_hash = evidence_hash(student.id, skill, tickets)
+    tickets.append(ticket_code)
+    node.evidence_tickets = json.dumps(tickets)
+    node.verified_lwi_count = len(tickets)
+    node.evidence_hash = evidence_hash(student.id, skill, tickets)
     node.last_updated = utcnow()
 
 

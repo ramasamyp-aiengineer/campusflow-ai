@@ -130,6 +130,7 @@ class SignalMessage(Base):
     task_lwi_id: Mapped[int | None] = mapped_column(ForeignKey("learning_work_items.id"), nullable=True)
     explainer_json: Mapped[str] = mapped_column(Text, default="")
     quiz_passed: Mapped[bool] = mapped_column(Boolean, default=False)
+    quiz_lock_until: Mapped[str] = mapped_column(String(40), default="")
     created_at: Mapped[str] = mapped_column(String(40), default=utcnow)
 
 
