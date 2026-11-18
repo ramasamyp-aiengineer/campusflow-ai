@@ -4,13 +4,14 @@
 
 | | |
 | --- | --- |
-| 🌐 **Live Deployed App** | https://campusflow-ai-five.vercel.app |
-| 🩺 **Live API Health** | https://campusflow-api-598899050820.asia-south1.run.app/health |
 | 🎯 **Hackathon Track** | Theme 2 — *AI for Education* (Prompt War 2026) |
+| 🌐 **Live Deployed App** | https://campusflow-ai-five.vercel.app |
+| 🩺 **API health** | https://campusflow-api-598899050820.asia-south1.run.app/health |
+| ⚡ **60-second judge path** | Open the live app → **Arjun** → My interests → **Explain & quiz me** on the FastAPI card → switch **Faculty** / **Placement** in the top bar |
 | 🔁 **Instant Persona Switcher** | Top bar: **Arjun / Faculty / Placement** — one click, seeded data, no re-signup |
 | 🔑 **Demo password** | `CampusFlow@2026` (one-click buttons on the login page) |
 | 🧪 **Evidence** | **71** backend tests · `tsc` + `next build` clean · SSRF + session auth + Gemini 503 fallbacks |
-| ⚡ **Local fallback** | `frontend`: `npm run dev` · `backend`: `uvicorn` on `:8000` |
+| 📦 **Source** | https://github.com/ramasamyp-aiengineer/campusflow-ai |
 
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs)
@@ -34,37 +35,49 @@ CampusFlow AI connects four loops that today run apart:
 A syllabus becomes a sprint. Mastered tickets become evidence on a skill graph. The news a student follows becomes labs and quizzes on that same graph. The cohort's reading trends tell faculty what the syllabus is missing.
 
 ```mermaid
-flowchart LR
-  subgraph S[Student workspace]
-    direction LR
-    A1[Syllabus-to-Sprint generator] --> A2[Kanban LWI board]
-    A2 --> A3[Socratic unblocker + rubric auditor]
-    A3 --> A4[Verified skill graph]
-    A4 --> A5[Placement JD copilot]
+flowchart TB
+  subgraph Classroom["1 · Classroom execution"]
+    direction TB
+    S1[Paste syllabus] --> S2[Syllabus-to-Sprint]
+    S2 --> S3[Kanban board<br/>BACKLOG → IN_PROGRESS → AI_REVIEW → MASTERED]
+    S3 --> S4[Socratic unblocker<br/>+ rubric auditor ≥75]
   end
 
-  subgraph R[RSS career signal engine]
-    direction LR
-    B1[SSRF-validated feed ingestion] --> B2[Skill-graph relevance filter]
-    B2 --> B3[Story fusion: cross-feed dedup]
-    B3 --> B4[Gemini 2-sentence summary, local fallback]
-    B4 --> B5[4-class sentiment + sub-topic clusters]
-    B5 --> B6["Turn into sprint task (LAB-1xx)"]
-    B5 --> B7["Explain & quiz me (+2 XP)"]
+  subgraph Skills["2 · Skill verification"]
+    direction TB
+    K1[Evidence-backed skill graph] --> K2[Placement JD copilot<br/>PLACE-1xx prep sprint]
   end
 
-  subgraph F[Faculty & Placement Cell command center]
-    direction LR
-    C1[Cohort velocity + at-risk radar]
-    C2[Curriculum drift radar: in vs not in syllabus, hiring alerts]
+  subgraph Signals["3 · Industry signals RSS"]
+    direction TB
+    R1[Subscribe Google News / sample interest] --> R2[SSRF-safe fetch]
+    R2 --> R3[Skill-graph relevance filter]
+    R3 --> R4[Story fusion across feeds]
+    R4 --> R5[Gemini brief + sentiment + topics]
+    R5 --> R6[Turn into LAB-1xx]
+    R5 --> R7[Explain and quiz · +2 XP]
   end
 
-  B6 --> A2
-  B7 --> A4
-  A4 --> C1
-  B5 --> C2
-  C2 -. workshop suggestions .-> A1
+  subgraph Faculty["4 · Curriculum updates"]
+    direction TB
+    F1[Cohort velocity + at-risk radar]
+    F2[Drift radar<br/>In syllabus vs Not in syllabus<br/>hiring alerts]
+  end
+
+  S4 --> K1
+  R6 --> S3
+  R7 --> K1
+  K1 --> F1
+  R5 --> F2
+  F2 -. workshop suggestions .-> S2
 ```
+
+| Loop | What happens | Judge-visible proof |
+| --- | --- | --- |
+| **1 Classroom** | Syllabus → sprint tickets → Socratic coach + rubric score | CS301 board, locked `CS301-106`, Strong draft ≥75 |
+| **2 Skills** | Scored mastery writes evidence onto the skill graph | FastAPI / SQL nodes; Placement shortlist by verified skill |
+| **3 Signals** | RSS → filter → fuse → `LAB-1xx` or quiz XP | My interests · FastAPI card · ML fusion · LoRA lab |
+| **4 Curriculum** | Cohort reading trends → drift + hiring alerts | Faculty drift radar · *"Hiring news is turning critical"* |
 
 Every AI call goes through one guarded path: untrusted text is redacted, wrapped, and sent to Gemini. The reply must pass a Pydantic schema, or a deterministic engine answers instead. The UI never waits on a model that is down.
 
@@ -86,21 +99,48 @@ Every AI call goes through one guarded path: untrusted text is redacted, wrapped
 - **JD copilot:** Matches a job description against verified scores and injects a **14-day prep sprint** (`PLACE-1xx` tickets) onto the board.
 
 ### D. Closed-loop RSS reading and career signal assistant
-- **Story fusion:** When a second feed carries the same story, it merges into the saved one. The test is at least 3 shared stemmed title words and 60% overlap. The card shows *"Reported by 2 sources"* with each outlet's link.
-- **Explainable relevance:** Up to 3 badges per story, for example *"Matches your active ticket CS301-104"*, *"Closes a skill gap: FastAPI (58)"*, or *"Placement prep: FastAPI is 33% of your sprint"*.
-- **Signal-to-action:**
-  - **"Turn into sprint task"** has Gemini plan a 2-to-4-hour micro-lab. It lands in the Backlog of a *Reading labs* sprint as `LAB-1xx`, with a skill tag mapped onto the graph. The same story never creates a second task.
-  - **"Explain & quiz me"** opens a 2-minute card: core concept, real-world use, and one check question. Grading happens on the server, and the first correct answer adds **+2 XP** to an existing skill node.
-- **Curriculum drift radar** (faculty and TPO): Trending skills are shown as *In syllabus* or *Not in syllabus* bars, with workshop suggestions. Critical alerts fire when, for example, a quarter of hiring news reads negative. **No student names are exposed.**
 
-Each interest also has **Stories**, **Sentiment** (Positive / Watchful / Critical / Neutral, with a donut chart and a sortable table), and **Topics** (keyword sub-clusters) tabs. Feeds refresh every 8 hours, and a manual re-check inside that window returns `409` with `Retry-After`.
+**End-to-end workflow (subscribe → filter → fuse → act → verify → drift):**
+
+1. **Subscribe** — Student adds a Google News RSS URL or a one-click sample interest (`Machine Learning`, `Machine learning research`, Placements, Databases). Cold-start demo already seeds Arjun with a live Google News SQL/FastAPI/placements feed plus a FastAPI outage card.
+2. **SSRF gate** — Only `http`/`https`, no credentials, no localhost / `.internal` / metadata hosts, no proxy env, 500 KB cap, XML entities refused.
+3. **Ingest + skill filter** — Items are scored against the student's verified skill graph and open LWIs. Irrelevant campus noise (sports, canteen) stays low; FastAPI / SQL / OS stories surface first.
+4. **Story fusion** — When a second feed carries the same story (≥3 shared stemmed title words and 60% overlap), it merges. The card shows *"Reported by 2 sources"* with **real outlet links** (docs, LWN, Hugging Face, scikit-learn, etc.—not placeholder domains).
+5. **Explainable relevance** — Up to 3 badges per story, e.g. *"Matches your active ticket CS301-104"*, *"Closes a skill gap: FastAPI (58)"*, *"Placement prep: FastAPI is 33% of your sprint"*.
+6. **Signal → lab** — **Turn into sprint task** has Gemini plan a 2–4 hour micro-lab → Backlog of *Reading labs* as `LAB-1xx` with a skill tag on the graph. Same story never creates a second task.
+7. **Signal → XP** — **Explain & quiz me** opens a 2-minute card (concept, real-world use, one check). Server-side grading; first correct answer adds **+2 XP** to an existing skill node (no farming).
+8. **Interest analytics** — Each interest has **Stories**, **Sentiment** (Positive / Watchful / Critical / Neutral + donut + sortable table), and **Topics** (keyword clusters).
+9. **Institutional loop** — Faculty / Placement **Curriculum drift radar**: trending skills as *In syllabus* vs *Not in syllabus*, workshop suggestions, critical hiring alerts (e.g. when ~25% of hiring news is negative). **No student names.**
+10. **Refresh cadence** — Feeds re-poll every 8 hours; a manual re-check inside that window returns `409` with `Retry-After`.
+
+```mermaid
+flowchart TB
+  A[Add interest] --> B[SSRF gate]
+  B --> C[Relevance vs skill graph]
+  C --> D[Fuse duplicate stories]
+  D --> E[Card with badges + real source links]
+  E --> F[LAB-1xx on Reading labs board]
+  E --> G[Quiz · first correct = +2 XP]
+  F --> H[Verified skill graph]
+  G --> H
+  C --> I[Sentiment + Topics tabs]
+  I --> J[Faculty drift radar]
+```
 
 ## 4. 90-Second Judge Walkthrough
 
+**Live demo:** https://campusflow-ai-five.vercel.app · password `CampusFlow@2026`
+
+| One-click persona | Email | Role |
+| --- | --- | --- |
+| **Arjun K.** | `arjun@campusflow.edu` | Student · seeded board + RSS interests |
+| **Dr. Meenakshi** | `meenakshi@campusflow.edu` | Faculty · cohort health + drift radar |
+| **Placement Cell** | `placement@campusflow.edu` | TPO · verified-skill shortlist |
+
 1. Click **Arjun K.** on the login page (or any demo button). Inside the app, the top-bar **Instant Persona Switcher** (`Arjun` / `Faculty` / `Placement`) flips roles in one click—sessions stay authenticated; boards stay seeded.
 2. **Student Kanban and Socratic tutor (25s).** Open the **CS301** sprint. `CS301-106` is locked behind `CS301-104`. Open `CS301-104`, **Rubric** tab → **Strong draft** (0–100). Then **Direct solution**: refused, PII stripped, remediation ticket filed. Skills only rise after readiness ≥ 75.
-3. **RSS intelligence (30s).** Open **My interests**. Top card = FastAPI outage with *"Closes a skill gap: FastAPI (58)"*. **Explain & quiz me** → correct answer → **+2 XP to FastAPI**. Add **Machine Learning** + **Machine learning research** samples → handwritten-digits shows *"Reported by 2 sources"*. Check **Sentiment** and **Topics**.
-4. **Signal-to-lab (15s).** On the LoRA story → **Turn into sprint task** → **open board** → `LAB-1xx` in **Reading labs** Backlog (second click does not duplicate).
+3. **RSS intelligence (30s).** Open **My interests**. Top card = FastAPI outage with *"Closes a skill gap: FastAPI (58)"* — open the story link (real FastAPI security docs). **Explain & quiz me** → correct answer → **+2 XP to FastAPI**. Add **Machine Learning** + **Machine learning research** samples → handwritten-digits shows *"Reported by 2 sources"* with real MNIST / PyTorch links. Check **Sentiment** and **Topics**.
+4. **Signal-to-lab (15s).** On the LoRA story (Hugging Face PEFT docs) → **Turn into sprint task** → **open board** → `LAB-1xx` in **Reading labs** Backlog (second click does not duplicate).
 5. **Institutional views (20s).** Switch to **Faculty**: at-risk students + **Curriculum drift radar** with *"Hiring news is turning critical"* (no student names). Switch to **Placement**: high CGPA vs low verified skill on Rohan Mehta.
 
 ## 5. Alignment with the Judging Criteria
@@ -228,8 +268,8 @@ npm run dev
 docker compose up --build          # API on http://localhost:8000 (container port 8080)
 ```
 
-- **API → Cloud Run:** Build from `backend/Dockerfile`. Set `GEMINI_API_KEY`, `ALLOWED_ORIGINS`, and `DEMO_PASSWORD`. The image sets `ENVIRONMENT=production`.
-- **Web → Vercel:** Deploy `frontend/` with `NEXT_PUBLIC_API_BASE` set to the API URL, and add the web origin to `ALLOWED_ORIGINS`.
+- **API → Cloud Run (live):** https://campusflow-api-598899050820.asia-south1.run.app — build from `backend/Dockerfile`. Set `GEMINI_API_KEY`, `ALLOWED_ORIGINS`, and `DEMO_PASSWORD`. The image sets `ENVIRONMENT=production`.
+- **Web → Vercel (live):** https://campusflow-ai-five.vercel.app — deploy `frontend/` with `NEXT_PUBLIC_API_BASE=https://campusflow-api-598899050820.asia-south1.run.app` and `ALLOWED_ORIGINS=https://campusflow-ai-five.vercel.app`.
 
 ### API surface
 
@@ -259,4 +299,4 @@ docker compose up --build          # API on http://localhost:8000 (container por
 - Point `DATABASE_URL` at Postgres for multi-instance Cloud Run (SQLite is ideal for the hackathon demo).
 - Move the 8-hour feed poller to Cloud Scheduler when running more than one API replica.
 - Swap shared `DEMO_PASSWORD` for campus SSO when leaving the judge demo.
-- Set `ALLOWED_ORIGINS` to your Vercel HTTPS origin and `NEXT_PUBLIC_API_BASE` to the Cloud Run URL.
+- Production is already wired: `ALLOWED_ORIGINS=https://campusflow-ai-five.vercel.app` and `NEXT_PUBLIC_API_BASE=https://campusflow-api-598899050820.asia-south1.run.app`.

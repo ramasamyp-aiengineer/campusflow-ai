@@ -28,3 +28,8 @@ Thumbs.db
 *.log
 .idea/
 .vscode/
+
+# Local pitch / demo media (kept outside commits)
+pitch/
+*.pptx
+*.mp4

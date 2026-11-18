@@ -83,7 +83,7 @@ BRIEFING_XML = """<?xml version="1.0"?>
 <rss version="2.0"><channel>
 <item>
   <title>Campus product teams are hiring SDE-1 backend engineers who can defend SQL joins</title>
-  <link>https://news.example.edu/hiring-sql-joins</link>
+  <link>https://www.geeksforgeeks.org/sql-join-set-1-inner-left-right-and-full-joins/</link>
   <guid>brief-hiring-sql</guid>
   <pubDate>Wed, 18 Nov 2026 09:00:00 GMT</pubDate>
   <source>Mint Campus</source>
@@ -91,7 +91,7 @@ BRIEFING_XML = """<?xml version="1.0"?>
 </item>
 <item>
   <title>Linux 6.x scheduler change reduces tail latency for student lab VMs</title>
-  <link>https://news.example.edu/linux-scheduler</link>
+  <link>https://lwn.net/Articles/825584/</link>
   <guid>brief-linux</guid>
   <pubDate>Tue, 17 Nov 2026 14:00:00 GMT</pubDate>
   <source>LWN</source>
@@ -99,7 +99,7 @@ BRIEFING_XML = """<?xml version="1.0"?>
 </item>
 <item>
   <title>Query planners now explain hash joins in plain language</title>
-  <link>https://news.example.edu/query-planners</link>
+  <link>https://www.postgresql.org/docs/current/planner-optimizer.html</link>
   <guid>brief-query</guid>
   <pubDate>Tue, 17 Nov 2026 11:20:00 GMT</pubDate>
   <source>Postgres Weekly</source>
@@ -107,7 +107,7 @@ BRIEFING_XML = """<?xml version="1.0"?>
 </item>
 <item>
   <title>Gemini structured output reaches more campus GenAI electives</title>
-  <link>https://news.example.edu/gemini-json</link>
+  <link>https://ai.google.dev/gemini-api/docs/structured-output</link>
   <guid>brief-gemini</guid>
   <pubDate>Mon, 16 Nov 2026 10:00:00 GMT</pubDate>
   <source>Google Developers</source>
@@ -115,7 +115,7 @@ BRIEFING_XML = """<?xml version="1.0"?>
 </item>
 <item>
   <title>Service firms freeze campus placement offers after layoffs and a revenue loss</title>
-  <link>https://news.example.edu/placement-freeze</link>
+  <link>https://en.wikipedia.org/wiki/Campus_placement</link>
   <guid>brief-placement-freeze</guid>
   <pubDate>Mon, 16 Nov 2026 15:30:00 GMT</pubDate>
   <source>Placement Pulse</source>
@@ -123,7 +123,7 @@ BRIEFING_XML = """<?xml version="1.0"?>
 </item>
 <item>
   <title>City derby ends in a draw after extra time</title>
-  <link>https://news.example.edu/derby</link>
+  <link>https://en.wikipedia.org/wiki/Association_football</link>
   <guid>brief-sport</guid>
   <pubDate>Mon, 16 Nov 2026 18:00:00 GMT</pubDate>
   <source>Sports Desk</source>
@@ -131,7 +131,7 @@ BRIEFING_XML = """<?xml version="1.0"?>
 </item>
 <item>
   <title>Canteen adds a monsoon special thali</title>
-  <link>https://news.example.edu/canteen</link>
+  <link>https://en.wikipedia.org/wiki/Thali</link>
   <guid>brief-canteen</guid>
   <pubDate>Sun, 15 Nov 2026 06:00:00 GMT</pubDate>
   <source>Campus Diary</source>
@@ -139,7 +139,7 @@ BRIEFING_XML = """<?xml version="1.0"?>
 </item>
 <item>
   <title>FastAPI services face a rate-limit outage after a leaked key</title>
-  <link>https://news.example.edu/fastapi-outage</link>
+  <link>https://fastapi.tiangolo.com/tutorial/security/first-steps/</link>
   <guid>brief-fastapi-outage</guid>
   <pubDate>Wed, 18 Nov 2026 08:10:00 GMT</pubDate>
   <source>The Hindu Tech</source>
@@ -152,7 +152,7 @@ ML_XML = """<?xml version="1.0"?>
 <rss version="2.0"><channel>
 <item>
   <title>A campus lab trains a small neural model on handwritten digits</title>
-  <link>https://news.example.edu/ml-digits</link>
+  <link>https://en.wikipedia.org/wiki/MNIST_database</link>
   <guid>ml-digits</guid>
   <pubDate>Wed, 18 Nov 2026 09:30:00 GMT</pubDate>
   <source>Campus ML Notes</source>
@@ -160,7 +160,7 @@ ML_XML = """<?xml version="1.0"?>
 </item>
 <item>
   <title>Hiring teams ask interns to explain a training split before the model</title>
-  <link>https://news.example.edu/ml-hiring</link>
+  <link>https://scikit-learn.org/stable/modules/cross_validation.html</link>
   <guid>ml-hiring</guid>
   <pubDate>Tue, 17 Nov 2026 12:00:00 GMT</pubDate>
   <source>Mint Campus</source>
@@ -168,7 +168,7 @@ ML_XML = """<?xml version="1.0"?>
 </item>
 <item>
   <title>City derby ends in a draw after extra time</title>
-  <link>https://news.example.edu/ml-derby</link>
+  <link>https://en.wikipedia.org/wiki/Association_football</link>
   <guid>ml-derby</guid>
   <pubDate>Mon, 16 Nov 2026 18:00:00 GMT</pubDate>
   <source>Sports Desk</source>
@@ -182,7 +182,7 @@ WIRE_XML = """<?xml version="1.0"?>
 <rss version="2.0"><channel>
 <item>
   <title>Students train a small neural model to read handwritten digits</title>
-  <link>https://wire.example.org/digits-model</link>
+  <link>https://pytorch.org/tutorials/beginner/basics/data_tutorial.html</link>
   <guid>wire-digits</guid>
   <pubDate>Wed, 18 Nov 2026 11:00:00 GMT</pubDate>
   <source>AI Research Wire</source>
@@ -190,7 +190,7 @@ WIRE_XML = """<?xml version="1.0"?>
 </item>
 <item>
   <title>Interns now explain the training split before the model, hiring teams say</title>
-  <link>https://wire.example.org/interns-split</link>
+  <link>https://en.wikipedia.org/wiki/Training,_validation,_and_test_data_sets</link>
   <guid>wire-interns</guid>
   <pubDate>Tue, 17 Nov 2026 15:00:00 GMT</pubDate>
   <source>Hacker Digest</source>
@@ -198,7 +198,7 @@ WIRE_XML = """<?xml version="1.0"?>
 </item>
 <item>
   <title>LoRA quantization cuts VRAM usage by 40 percent for fine-tuning</title>
-  <link>https://wire.example.org/lora-vram</link>
+  <link>https://huggingface.co/docs/peft/conceptual_guides/lora</link>
   <guid>wire-lora</guid>
   <pubDate>Wed, 18 Nov 2026 07:00:00 GMT</pubDate>
   <source>Model Lab Notes</source>
@@ -206,7 +206,7 @@ WIRE_XML = """<?xml version="1.0"?>
 </item>
 <item>
   <title>Entry-level AI hiring freeze brings layoffs as teams ask for RAG evaluation skills</title>
-  <link>https://wire.example.org/rag-hiring</link>
+  <link>https://python.langchain.com/docs/tutorials/rag/</link>
   <guid>wire-rag-hiring</guid>
   <pubDate>Tue, 17 Nov 2026 09:00:00 GMT</pubDate>
   <source>Placement Pulse</source>
@@ -214,7 +214,7 @@ WIRE_XML = """<?xml version="1.0"?>
 </item>
 <item>
   <title>Stock market closes higher on festive demand</title>
-  <link>https://wire.example.org/markets</link>
+  <link>https://en.wikipedia.org/wiki/Stock_market</link>
   <guid>wire-markets</guid>
   <pubDate>Mon, 16 Nov 2026 16:00:00 GMT</pubDate>
   <source>Market Desk</source>
