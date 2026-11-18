@@ -113,8 +113,12 @@ function TicketCard({ item, onOpen }: { item: LWI; onOpen: (id: number) => void 
   const accent = item.blocked ? "#BE123C" : item.status === "MASTERED" ? "#0F7A4A" : item.status === "AI_REVIEW" ? "#C47B12" : item.status === "IN_PROGRESS" ? "#0E7C66" : "#D6CFC4";
   return (
     <article
-      draggable
+      draggable={!item.blocked}
       onDragStart={(event) => {
+        if (item.blocked) {
+          event.preventDefault();
+          return;
+        }
         dragged.current = true;
         event.dataTransfer.setData("text/plain", String(item.id));
         event.dataTransfer.effectAllowed = "move";
@@ -128,8 +132,9 @@ function TicketCard({ item, onOpen }: { item: LWI; onOpen: (id: number) => void 
         if (dragged.current) return;
         onOpen(item.id);
       }}
-      className="cursor-pointer rounded-xl border border-line bg-white p-3 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift"
+      className={`rounded-xl border border-line bg-white p-3 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift ${item.blocked ? "cursor-pointer opacity-95" : "cursor-grab active:cursor-grabbing"}`}
       style={{ borderLeft: `3px solid ${accent}` }}
+      title={item.blocked ? item.block_reason || "Blocked by a prerequisite" : undefined}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="mono text-[11px] text-slate-500">{item.ticket_code}</span>

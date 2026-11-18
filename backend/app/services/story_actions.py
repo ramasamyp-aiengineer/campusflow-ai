@@ -404,6 +404,13 @@ def answer_quiz(db: Session, student: User, message: SignalMessage, choice: int)
             node.last_updated = utcnow()
             result["xp_awarded"] = QUIZ_XP
         result["skill_score"] = node.proficiency_score
+    elif result["skill"]:
+        result["why"] = (
+            f"{result['why']} {result['skill']} is not on your skill graph yet. "
+            "Finish a lab task on it to start that node, then quiz XP can land there."
+        )
+    else:
+        result["why"] = f"{result['why']} This story has no linked skill on your graph, so no XP this time."
     message.quiz_passed = True
     return result
 
