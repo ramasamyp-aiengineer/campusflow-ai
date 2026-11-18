@@ -59,5 +59,15 @@ export default function HomePage() {
       />
     );
   }
-  return <AppShell key={user.id} user={user} onSignOut={() => void signOut()} />;
+  return (
+    <AppShell
+      key={user.id}
+      user={user}
+      onSignOut={() => void signOut()}
+      onSwitched={(next) => {
+        setNotice("");
+        setUser(next);
+      }}
+    />
+  );
 }

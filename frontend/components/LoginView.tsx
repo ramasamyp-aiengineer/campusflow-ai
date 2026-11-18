@@ -74,8 +74,10 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
           <div className="lg:hidden">
             <Logo />
           </div>
-          <h2 className="display mt-8 text-[2rem] leading-tight text-ink lg:mt-0">Welcome back</h2>
-          <p className="mt-1 text-sm text-slate-500">Sign in with your campus email to open your workspace.</p>
+          <h2 className="display mt-8 text-[2rem] leading-tight text-ink lg:mt-0">Judge demo access</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            One click opens a seeded workspace. Inside the app, the top-bar <span className="font-semibold text-ink">Instant Persona Switcher</span> flips Student / Faculty / Placement without leaving the board.
+          </p>
 
           {notice && <p className="mt-5 rounded-2xl bg-[#F4E6CF] px-4 py-2.5 text-sm text-[#8A4A1C]">{notice}</p>}
 

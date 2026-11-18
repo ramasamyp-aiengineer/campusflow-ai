@@ -41,7 +41,15 @@ const VIEW_FOR: Record<Persona, View> = {
   tpo: "tpo",
 };
 
-export function AppShell({ user, onSignOut }: { user: SessionUser; onSignOut: () => void }) {
+export function AppShell({
+  user,
+  onSignOut,
+  onSwitched,
+}: {
+  user: SessionUser;
+  onSignOut: () => void;
+  onSwitched: (next: SessionUser) => void;
+}) {
   const persona: Persona = user.persona;
   const [view, setView] = useState<View>(VIEW_FOR[user.persona]);
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
@@ -304,7 +312,16 @@ export function AppShell({ user, onSignOut }: { user: SessionUser; onSignOut: ()
         onClose={() => setMenuOpen(false)}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar user={user} boot={boot} query={query} liveLabel={liveLabel} onQuery={setQuery} onSignOut={onSignOut} onMenu={() => setMenuOpen(true)} />
+        <TopBar
+          user={user}
+          boot={boot}
+          query={query}
+          liveLabel={liveLabel}
+          onQuery={setQuery}
+          onSignOut={onSignOut}
+          onSwitched={onSwitched}
+          onMenu={() => setMenuOpen(true)}
+        />
         <div className="flex min-h-0 flex-1">
           <main className="min-w-0 flex-1">
             {view === "dashboard" && (

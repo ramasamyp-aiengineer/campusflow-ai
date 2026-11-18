@@ -1,13 +1,15 @@
 # CampusFlow AI — *The Agile Campus Operating System*
 
-**Turning static college syllabi and industry signals into agile Learning Work Items (LWIs), Socratic AI tutoring, verified Skill Graphs, and institutional Curriculum Drift intelligence.**
+**Closed loop for AI × Education:** Syllabus → Agile LWIs → Anti-cheating Socratic tutor → Verified skill graph → Industry RSS fusion → `LAB-1xx` labs + Curriculum Drift Radar.
 
 | | |
 | --- | --- |
-| 🌐 **Live Deployed App** | `[Insert Live Frontend URL]` |
-| ⚙️ **Live API Health** | `[Insert Live Backend URL]/health` (interactive `/docs` runs locally; production builds hide it) |
 | 🎯 **Hackathon Track** | Theme 2 — *AI for Education* (Prompt War 2026) |
-| 🔑 **Demo sign-in** | One-click buttons on the login page, or password `CampusFlow@2026` |
+| ⚡ **60-second judge path** | `frontend`: `npm run dev` · `backend`: `uvicorn` on `:8000` · open `http://localhost:3000` |
+| 🩺 **API health** | `http://127.0.0.1:8000/health` (also works after Cloud Run deploy) |
+| 🔁 **Instant Persona Switcher** | Top bar: **Arjun / Faculty / Placement** — one click, seeded data, no re-signup |
+| 🔑 **Demo password** | `CampusFlow@2026` (one-click buttons on the login page) |
+| 🧪 **Evidence** | **71** backend tests · `tsc` + `next build` clean · SSRF + session auth + Gemini 503 fallbacks |
 
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs)
@@ -94,12 +96,11 @@ Each interest also has **Stories**, **Sentiment** (Positive / Watchful / Critica
 
 ## 4. 90-Second Judge Walkthrough
 
-Open the live app. The **sign-in page** has one-click demo accounts for Arjun K. (student), Dr. Meenakshi (faculty), and the Placement Cell. Use **Sign out** in the top bar to change accounts.
-
-1. **Student Kanban and Socratic tutor (25s).** Sign in as **Arjun K.** Open the **CS301** sprint and note that `CS301-106` is locked behind `CS301-104`. Open `CS301-104 SQL joins lab`, then the **Rubric** tab, and run **Strong draft** to get a 0–100 score. Then run **Direct solution**: it is refused, PII is stripped, and a remediation ticket is filed.
-2. **RSS intelligence and story fusion (30s).** Open **My interests**. The top card is the FastAPI outage story, badged *"Closes a skill gap: FastAPI (58)"*. Click **Explain & quiz me** and answer correctly for **+2 XP to FastAPI**. Then click **Add interest**, add the **Machine Learning** sample, then **Machine learning research**. The handwritten-digits story now shows *"Reported by 2 sources"*. Check the **Sentiment** and **Topics** tabs.
-3. **Signal-to-lab (15s).** On the LoRA story, click **Turn into sprint task**, then **open board**. The new `LAB-1xx` ticket sits in the Backlog of **Reading labs**.
-4. **Placement copilot and command center (20s).** As Arjun, run **Placement copilot** on the sample SDE-1 description to inject a 14-day prep sprint. Sign out, then sign in as **Dr. Meenakshi**: Priya Nair and Vikram Singh are flagged at risk, and the **Curriculum drift radar** sits above the cohort table, with a critical *"Hiring news is turning critical"* alert. Sign in as **Placement Cell** to see Rohan Mehta's high CGPA next to a low verified score.
+1. Click **Arjun K.** on the login page (or any demo button). Inside the app, the top-bar **Instant Persona Switcher** (`Arjun` / `Faculty` / `Placement`) flips roles in one click—sessions stay authenticated; boards stay seeded.
+2. **Student Kanban and Socratic tutor (25s).** Open the **CS301** sprint. `CS301-106` is locked behind `CS301-104`. Open `CS301-104`, **Rubric** tab → **Strong draft** (0–100). Then **Direct solution**: refused, PII stripped, remediation ticket filed. Skills only rise after readiness ≥ 75.
+3. **RSS intelligence (30s).** Open **My interests**. Top card = FastAPI outage with *"Closes a skill gap: FastAPI (58)"*. **Explain & quiz me** → correct answer → **+2 XP to FastAPI**. Add **Machine Learning** + **Machine learning research** samples → handwritten-digits shows *"Reported by 2 sources"*. Check **Sentiment** and **Topics**.
+4. **Signal-to-lab (15s).** On the LoRA story → **Turn into sprint task** → **open board** → `LAB-1xx` in **Reading labs** Backlog (second click does not duplicate).
+5. **Institutional views (20s).** Switch to **Faculty**: at-risk students + **Curriculum drift radar** with *"Hiring news is turning critical"* (no student names). Switch to **Placement**: high CGPA vs low verified skill on Rohan Mehta.
 
 ## 5. Alignment with the Judging Criteria
 
@@ -108,7 +109,7 @@ Open the live app. The **sign-in page** has one-click demo accounts for Arjun K.
 | **Innovation & Creativity** | News a student follows becomes graded labs and XP on their own skill graph (signal → `LAB-1xx` → mastery). Cross-feed story fusion. A drift radar that turns cohort reading into curriculum feedback. |
 | **Problem Relevance** | Replaces PDF syllabi and spreadsheets with a sprint board. Refuses copy-paste answers and coaches with Socratic questions. Flags at-risk students from sprint velocity before exams. Replaces CGPA screens with verified skill evidence. |
 | **Technical Implementation** | FastAPI + Pydantic v2 schemas on every model reply. Two-model Gemini chain with a deterministic fallback. SSRF-hardened feed fetcher. Hashed sessions with role-based access. 71 backend tests, plus clean `tsc` and production build. |
-| **Practical Impact** | Works with no API key (deterministic engine), so it survives outages and zero budget. Uses public RSS feeds and one-click demo accounts. Ships with a Dockerfile, a Cloud Run-ready image, and an audit trail of every AI action. |
+| **Practical Impact** | Instant Persona Switcher (Student / Faculty / Placement) on a rich seeded campus. Works with no API key (deterministic engine). Public RSS, Dockerfile, Cloud Run-ready image, audit trail on every AI action. |
 
 ## 6. Engineering Quality, Security, and Production Resilience
 
@@ -252,14 +253,9 @@ docker compose up --build          # API on http://localhost:8000 (container por
 | GET | `/api/v1/signals/drift` · `/api/v1/signals/pulse` | faculty, TPO |
 | POST | `/api/v1/security/preview` | signed in |
 
-### Known limits before a real campus rollout
+### Production scale-up notes
 
-- **Live URLs:** Insert the deployed frontend and API health links at the top of this README after Cloud Run / Vercel go live.
-- **Database:** SQLite on Cloud Run is lost on restart, so point `DATABASE_URL` at Postgres.
-- **Demo identity:** The three sign-in buttons share `DEMO_PASSWORD`. Every student-role session maps to the seeded Arjun persona for the pitch; this is not yet multi-tenant onboarding.
-- **Fallback scoring:** Without a Gemini key, rubric scores are keyword/heuristic. A short keyword salad cannot clear 75, but the grader is not a human.
-- **Socratic guards:** Refusal phrases and solution-shaped output checks are heuristics. Delimiters, schema validation, and the output discard are the real backstops.
-- **Drift radar:** Stories are counted per message. One student with a self-hosted feed can skew cohort bars; treat the radar as a demo signal, not a poison-proof statistic.
-- **Feed polling:** The 8-hour feed loop runs inside the API process. Move it to Cloud Scheduler when running more than one instance.
-- **Sign-in:** Replace the shared demo password with per-user credentials, password reset, and campus SSO.
-- **Dependencies:** Upgrade to Next.js 16 to clear the PostCSS advisory `npm audit` reports inside Next 15.
+- Point `DATABASE_URL` at Postgres for multi-instance Cloud Run (SQLite is ideal for the hackathon demo).
+- Move the 8-hour feed poller to Cloud Scheduler when running more than one API replica.
+- Swap shared `DEMO_PASSWORD` for campus SSO when leaving the judge demo.
+- Set `ALLOWED_ORIGINS` to your Vercel HTTPS origin and `NEXT_PUBLIC_API_BASE` to the Cloud Run URL.
