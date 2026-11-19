@@ -1,7 +1,7 @@
 import re
 
 INJECTION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("ignore_instructions", re.compile(r"ignore\s+(all\s+)?(previous|prior|above)\s+instructions", re.I)),
+    ("ignore_instructions", re.compile(r"ignore\s+(all\s+)?((previous|prior|above)\s+)?instructions", re.I)),
     ("reveal_prompt", re.compile(r"(reveal|print|show|leak)\s+(the\s+)?(system|hidden)\s+prompt", re.I)),
     ("role_override", re.compile(r"you\s+are\s+now\s+", re.I)),
     ("jailbreak", re.compile(r"\b(jailbreak|do\s+anything\s+now|developer\s+mode)\b", re.I)),

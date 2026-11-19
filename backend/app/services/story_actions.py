@@ -333,7 +333,8 @@ def cached_explainer(message: SignalMessage) -> tuple[Explainer, str] | None:
 
 def build_explainer(message: SignalMessage) -> tuple[Explainer, str]:
     cached = cached_explainer(message)
-    if cached and (cached[1] == "gemini" or message.quiz_passed):
+    # Once a card is issued, freeze it. Upgrading mid-attempt can move the answer key.
+    if cached:
         return cached
     from app.security.pipeline import guard_untrusted
     from app.services.ai import complete_json

@@ -165,11 +165,11 @@ flowchart TB
   - The model chain is `GEMINI_MODEL` (`gemini-flash-latest`), then `GEMINI_FALLBACK_MODEL` (`gemini-flash-lite-latest`), then a deterministic local engine.
   - A model returning `429`/`5xx` rests for 5 minutes, and a reply that fails its Pydantic schema is retried once.
   - RSS summaries fall back to an extractive two-sentence summary labeled **"Quick summary"**.
-  - Explainers cached during an outage upgrade to Gemini when next opened, unless the quiz is already passed.
+  - Once an explainer card is issued it is frozen so a later Gemini recovery cannot move the answer key mid-quiz.
 - **Prompt-injection and integrity guardrails** (`backend/app/security/`):
   - Syllabi, submissions, job descriptions, and RSS article text are neutralized and wrapped in `<student_submission>` delimiters.
   - Generated hints and fixes are scanned for solution-shaped text on unblock and evaluate replies.
-  - Quiz answer keys never leave the server. Fallback answer positions are derived from `APP_SECRET`, not the public message id, and a wrong answer locks the card briefly. Grading always uses the stored card, so a cached upgrade can't change an answer mid-attempt.
+  - Quiz answer keys never leave the server. Fallback answer positions are derived from `APP_SECRET`, not the public message id, and a wrong answer locks the card briefly. Grading always uses the frozen stored card; reopening explain cannot change the answer mid-attempt.
 - **Authentication and access control:**
   - Passwords are salted `scrypt` hashes. Session tokens are random and stored only as SHA-256 hashes, last `SESSION_HOURS`, are revoked on sign-out, and expired/revoked rows are purged.
   - The role comes from the account, never from the browser, and wrong email and wrong password get the same answer.

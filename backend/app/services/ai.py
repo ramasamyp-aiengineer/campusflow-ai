@@ -15,7 +15,8 @@ DIRECT_SOLUTION = re.compile(
     r"\b("
     r"write the (code|query|sql|solution)|give me the (code|answer|solution)|"
     r"complete (this |the )?assignment for me|"
-    r"full solution|solve this for me|do my homework|write it for me|"
+    r"full( working)? (python )?code|full solution|solve this for me|do my homework|write it for me|"
+    r"print the (full )?(working )?(python )?(code|solution)|"
     r"do (the |my )?(whole )?(lab|assignment|homework) for me|"
     r"finish (this|my) (code|assignment|lab)( for me)?"
     r")\b",
@@ -416,7 +417,7 @@ def _gemini_json(prompt: str, timeout: float = 25) -> dict | None:
         "generationConfig": {
             "temperature": 0.2,
             "responseMimeType": "application/json",
-            "maxOutputTokens": 4096,
+            "maxOutputTokens": 2048,
         },
     }
     for model in _models_to_try():
