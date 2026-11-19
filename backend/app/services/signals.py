@@ -604,7 +604,14 @@ def fuse_story(message: SignalMessage, source: str, url: str) -> bool:
     return True
 
 
-def ingest_xml(db: Session, student: User, subscription: FeedSubscription, xml_text: str) -> dict[str, int]:
+def ingest_xml(
+    db: Session,
+    student: User,
+    subscription: FeedSubscription,
+    xml_text: str,
+    *,
+    live_briefs: bool = True,
+) -> dict[str, int]:
     terms = profile_terms(db, student.id)
     raw_items = parse_feed(xml_text)
     kept = 0
@@ -640,7 +647,7 @@ def ingest_xml(db: Session, student: User, subscription: FeedSubscription, xml_t
         if twin is not None:
             fused += int(fuse_story(twin, raw.source, raw.url))
             continue
-        if gemini_budget > 0:
+        if live_briefs and gemini_budget > 0:
             brief, brief_source = article_brief(decision.raw.title, decision.raw.summary, subscription.label)
             gemini_budget = gemini_budget - 1 if brief_source == "gemini" else 0
         else:
@@ -895,7 +902,7 @@ def seed_signals_if_empty(db: Session) -> None:
     )
     db.add(feed)
     db.flush()
-    ingest_xml(db, student, feed, BRIEFING_XML)
+    ingest_xml(db, student, feed, BRIEFING_XML, live_briefs=False)
     messages = (
         db.query(SignalMessage)
         .filter(SignalMessage.student_id == student.id)
