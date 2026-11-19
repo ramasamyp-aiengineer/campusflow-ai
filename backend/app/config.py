@@ -76,8 +76,17 @@ class Settings(BaseSettings):
             problems.append("Set GEMINI_API_KEY")
         if not self.origins:
             problems.append("Set ALLOWED_ORIGINS")
-        elif any("localhost" in origin or "127.0.0.1" in origin for origin in self.origins):
-            problems.append("Set ALLOWED_ORIGINS to the deployed frontend origin")
+        else:
+            for origin in self.origins:
+                if origin == "*" or "*" in origin or origin.startswith("*"):
+                    problems.append("ALLOWED_ORIGINS must not use wildcards")
+                    break
+                if not (origin.startswith("https://") or origin.startswith("http://")):
+                    problems.append("ALLOWED_ORIGINS entries must be absolute http(s) origins")
+                    break
+                if "localhost" in origin or "127.0.0.1" in origin:
+                    problems.append("Set ALLOWED_ORIGINS to the deployed frontend origin")
+                    break
         for name, model in (("GEMINI_MODEL", self.gemini_model), ("GEMINI_FALLBACK_MODEL", self.gemini_fallback_model)):
             if not model.strip() or "latest" in model.lower():
                 problems.append(f"Pin {name} to a stable model id")

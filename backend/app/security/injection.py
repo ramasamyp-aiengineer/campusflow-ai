@@ -19,6 +19,7 @@ def neutralize_injection(text: str) -> str:
     cleaned = text.replace("<", "‹").replace(">", "›")
     cleaned = INJECTION_PATTERNS[0][1].sub("[neutralized instruction override]", cleaned)
     cleaned = INJECTION_PATTERNS[1][1].sub("[neutralized prompt request]", cleaned)
+    cleaned = INJECTION_PATTERNS[2][1].sub("[neutralized role override]", cleaned)
     cleaned = INJECTION_PATTERNS[3][1].sub("[neutralized]", cleaned)
     cleaned = INJECTION_PATTERNS[5][1].sub("[neutralized policy request]", cleaned)
     return cleaned

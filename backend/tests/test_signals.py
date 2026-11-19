@@ -2,8 +2,10 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from app.services import signals
 from app.services.signals import (
     BRIEFING_XML,
+    _check_peer,
     _cluster_for,
     analyze_sentiment,
     article_brief,
@@ -169,8 +171,7 @@ def test_gemini_failure_falls_back_for_the_whole_batch(monkeypatch):
 
 
 def test_failed_new_interest_is_not_saved(client: TestClient, monkeypatch):
-    from app.services import signals
-
+    
     def unreachable(url: str, transport=None) -> str:
         raise httpx.ConnectError("down")
 
@@ -262,3 +263,18 @@ def test_student_message_marks_read(client: TestClient):
     marked = client.patch(f"/api/v1/signals/messages/{unread['id']}/read", headers={"X-Persona": "student"})
     assert marked.status_code == 200
     assert marked.json()["is_read"] is True
+
+
+def test_missing_peer_metadata_is_refused_in_production_path():
+    class FakeResponse:
+        extensions = {}
+
+    with pytest.raises(ValueError, match="peer address"):
+        _check_peer(FakeResponse(), require_peer=True)
+
+
+def test_mock_transport_can_skip_peer_metadata():
+    class FakeResponse:
+        extensions = {}
+
+    _check_peer(FakeResponse(), require_peer=False)

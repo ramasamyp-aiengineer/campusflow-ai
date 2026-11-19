@@ -7,9 +7,9 @@ export const COLUMNS: { id: Status; label: string; hint: string; bar: string }[]
   { id: "MASTERED", label: "Mastered", hint: "Evidence kept", bar: "#059669" },
 ];
 
-/** Empty in production builds unless NEXT_PUBLIC_DEMO_PASSWORD is set for the hackathon demo. */
-export const DEMO_PASSWORD =
-  process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? (process.env.NODE_ENV === "production" ? "" : "CampusFlow@2026");
+/** Local demo only. Production builds never embed a password; TopBar uses /auth/demo-switch instead. */
+export const DEMO_PASSWORD = process.env.NODE_ENV === "production" ? "" : "CampusFlow@2026";
+export const DEMO_SWITCH_ENABLED = true;
 
 export const DEMO_ACCOUNTS: { id: Persona; name: string; detail: string; initials: string; email: string }[] = [
   { id: "student", name: "Arjun K.", detail: "Student · 3rd Year CSE", initials: "AK", email: "arjun@campusflow.edu" },

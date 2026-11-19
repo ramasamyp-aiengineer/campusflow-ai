@@ -758,7 +758,11 @@ def posture(persona: str = Depends(current_persona), db: Session = Depends(get_d
     from app.config import get_settings
     from app.models import AuditEvent
 
-    events = db.query(AuditEvent).order_by(AuditEvent.id.desc()).limit(6).all()
+    actor = persona_user(db, persona)
+    query = db.query(AuditEvent).order_by(AuditEvent.id.desc())
+    if persona == "student":
+        query = query.filter(AuditEvent.actor_token == actor.anon_token)
+    events = query.limit(6).all()
     return PostureOut(
         ai_mode=get_settings().ai_mode,
         controls=[

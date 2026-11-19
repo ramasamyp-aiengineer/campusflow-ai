@@ -4,12 +4,13 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.database import get_db
 from app.limiter import limiter
 from app.models import User
 from app.routers.api import bearer_token
-from app.schemas import LoginIn, LoginOut, RegisterIn, SessionUser
-from app.security.auth import PERSONA_FOR_ROLE, authenticate, end_session, hash_password, session_for, start_session
+from app.schemas import DemoSwitchIn, LoginIn, LoginOut, RegisterIn, SessionUser
+from app.security.auth import DEMO_EMAILS, PERSONA_FOR_ROLE, authenticate, end_session, hash_password, session_for, start_session
 from app.services.board import audit
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -103,3 +104,29 @@ def logout(authorization: str = Header(default=""), db: Session = Depends(get_db
     audit(db, user, "auth.logout", "signed out")
     db.commit()
     return Response(status_code=204)
+
+
+def _demo_email_for_persona(persona: str) -> str | None:
+    mapping = {"student": "STU_8921", "faculty": "FAC_1044", "tpo": "TPO_017"}
+    token = mapping.get(persona.strip().lower())
+    return DEMO_EMAILS.get(token) if token else None
+
+
+@router.post("/demo-switch", response_model=LoginOut)
+@limiter.limit("20/minute")
+def demo_switch(request: Request, response: Response, body: DemoSwitchIn, db: Session = Depends(get_db)) -> LoginOut:
+    """Hackathon persona switch. Password stays server-side; never embed it in NEXT_PUBLIC_*. """
+    settings = get_settings()
+    if not settings.demo_password.strip():
+        raise HTTPException(status_code=404, detail="Demo switch is disabled")
+    persona = body.persona.strip().lower()
+    email = _demo_email_for_persona(persona)
+    if email is None:
+        raise HTTPException(status_code=400, detail="Unknown demo persona")
+    user = authenticate(db, email, settings.demo_password)
+    if user is None or user.role not in PERSONA_FOR_ROLE:
+        raise HTTPException(status_code=401, detail=WRONG_LOGIN)
+    token, expires_at = start_session(db, user)
+    audit(db, user, "auth.demo_switch", f"persona={persona}")
+    db.commit()
+    return LoginOut(token=token, expires_at=expires_at, user=_user_out(user))

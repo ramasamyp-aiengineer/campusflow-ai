@@ -42,9 +42,9 @@ export function TopBar({
         // Local token is replaced either way.
       }
       clearToken();
-      const result = await api<LoginResult>("/api/v1/auth/login", null, {
+      const result = await api<LoginResult>("/api/v1/auth/demo-switch", null, {
         method: "POST",
-        body: JSON.stringify({ email: next.email, password: DEMO_PASSWORD }),
+        body: JSON.stringify({ persona: next.id }),
       });
       setToken(result.token);
       onSwitched(result.user);
@@ -81,7 +81,7 @@ export function TopBar({
           />
         </div>
         <div className="flex items-center gap-2">
-          {DEMO_PASSWORD ? (
+          {true ? (
             <div
               className="flex items-center rounded-full border border-line bg-canvas p-1"
               role="group"

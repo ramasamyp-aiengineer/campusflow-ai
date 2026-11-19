@@ -258,12 +258,12 @@ npm run dev
 | `ALLOWED_ORIGINS` | backend | `http://localhost:3000,http://127.0.0.1:3000` | CORS allow-list |
 | `ALLOWED_HOSTS` | backend | live API host plus local/test hosts | Exact Host-header allow-list |
 | `ENVIRONMENT` | backend | `development` | `production` hides `/docs` and `/openapi.json` |
-| `DEMO_PASSWORD` | backend | `CampusFlow@2026` locally | Password for the 3 demo accounts; must be set explicitly in production env |
+| `DEMO_PASSWORD` | backend | local demo / required in prod | Powers demo accounts and `/api/v1/auth/demo-switch`. Never expose via `NEXT_PUBLIC_*`. |
 | `APP_SECRET` | backend | local demo value | Server-only quiz secret; a non-default value is required in production |
 | `SESSION_HOURS` | backend | `12` | Session lifetime |
 | `ALLOW_PERSONA_HEADER` | backend | `false` | Test-only `X-Persona` shortcut. Keep it off anywhere real. |
 | `NEXT_PUBLIC_API_BASE` | frontend | `http://127.0.0.1:8000` | API URL used by the browser |
-| `NEXT_PUBLIC_DEMO_PASSWORD` | frontend | `CampusFlow@2026` | Demo buttons on the sign-in page. Empty hides them. |
+| Demo sign-in | frontend + backend | server `DEMO_PASSWORD` | Production uses `/api/v1/auth/demo-switch`; never put the password in `NEXT_PUBLIC_*`. |
 
 ### Docker and deployment
 

@@ -40,6 +40,23 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
     }
   }
 
+  async function signInDemo(persona: string) {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await api<LoginResult>("/api/v1/auth/demo-switch", null, {
+        method: "POST",
+        body: JSON.stringify({ persona }),
+      });
+      setToken(result.token);
+      onSignedIn(result.user);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not open the demo account");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function signIn(nextEmail = email, nextPassword = password) {
     setBusy(true);
     setError("");
@@ -174,7 +191,7 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
             {creating ? "Have an account? Sign in" : "Create a student account"}
           </button>
 
-          {DEMO_PASSWORD && (
+          {true && (
             <div className="mt-8">
               <div className="flex items-center gap-3">
                 <span className="h-px flex-1 bg-line" />
@@ -189,8 +206,12 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
                     disabled={busy}
                     onClick={() => {
                       setEmail(account.email);
-                      setPassword(DEMO_PASSWORD);
-                      void signIn(account.email, DEMO_PASSWORD);
+                      if (DEMO_PASSWORD) {
+                        setPassword(DEMO_PASSWORD);
+                        void signIn(account.email, DEMO_PASSWORD);
+                      } else {
+                        void signInDemo(account.id);
+                      }
                     }}
                     className="group flex w-full items-center gap-3 rounded-2xl border border-line bg-white px-3 py-2.5 text-left transition hover:-translate-y-0.5 hover:shadow-card disabled:opacity-60"
                   >
@@ -205,7 +226,7 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
                   </button>
                 ))}
               </div>
-              <p className="mono mt-2 text-center text-[11px] text-slate-400">Demo password: {DEMO_PASSWORD}</p>
+              {DEMO_PASSWORD ? <p className="mono mt-2 text-center text-[11px] text-slate-400">Demo password: {DEMO_PASSWORD}</p> : <p className="mt-2 text-center text-[11px] text-slate-400">One-click demo sign-in (password stays on the server)</p>}
             </div>
           )}
         </div>

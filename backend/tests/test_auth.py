@@ -71,3 +71,11 @@ def test_role_header_alone_is_refused_when_disabled(client: TestClient, monkeypa
     response = client.get("/api/v1/dashboard", headers={"X-Persona": "student"})
     assert response.status_code == 401
     assert response.json()["detail"] == "Sign in to continue"
+
+
+def test_demo_switch_issues_a_session_without_client_password(client: TestClient):
+    response = client.post("/api/v1/auth/demo-switch", json={"persona": "faculty"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["user"]["persona"] == "faculty"
+    assert client.get("/api/v1/faculty/cohort-health", headers={"Authorization": f"Bearer {body['token']}"}).status_code == 200

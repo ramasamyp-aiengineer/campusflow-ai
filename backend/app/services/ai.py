@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from app.config import get_settings
 from app.schemas import EvaluationResult, RubricCheck
+from app.security.pii import redact_pii
 from app.security.pipeline import GuardedText, build_model_prompt, guard_untrusted
 
 T = TypeVar("T", bound=BaseModel)
@@ -14,6 +15,8 @@ T = TypeVar("T", bound=BaseModel)
 DIRECT_SOLUTION = re.compile(
     r"\b("
     r"write the (code|query|sql|solution)|give me the (code|answer|solution)|"
+    r"give me a solution|give me (the )?finished answer|paste the finished answer|"
+    r"dump the solution|can you code this for me|code this for me|"
     r"complete (this |the )?assignment for me|"
     r"full( working)? (python )?code|full solution|solve this for me|do my homework|write it for me|"
     r"print the (full )?(working )?(python )?(code|solution)|"
@@ -465,10 +468,12 @@ JD_HINT = (
 
 def plan_sprint(title: str, course_code: str, syllabus: str, weeks: int) -> tuple[GeneratedPlan, GuardedText]:
     guarded = guard_untrusted(syllabus, "deterministic-fallback")
+    safe_title, _, _ = redact_pii(title)
+    safe_code, _, _ = redact_pii(course_code)
     model, transport = complete_json(
-        f"Decompose this syllabus into 6 to 12 learning work items for a {weeks}-week sprint titled '{title}'. "
+        f"Decompose this syllabus into 6 to 12 learning work items for a {weeks}-week sprint titled '{safe_title}'. "
         "Course code should stay close to "
-        f"{course_code}. Chain prerequisite_index only to an earlier item. Never include identifiers from the submission.",
+        f"{safe_code}. Chain prerequisite_index only to an earlier item. Never include identifiers from the submission.",
         guarded,
         SPRINT_HINT,
         GeneratedPlan,

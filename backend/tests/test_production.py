@@ -102,3 +102,19 @@ def test_production_boot_rejects_the_dev_secret():
             gemini_model="gemini-3.5-flash-lite",
             gemini_fallback_model="gemini-2.5-flash-lite",
         )
+
+
+def test_production_boot_rejects_wildcard_cors():
+    from app.config import Settings
+
+    with pytest.raises(RuntimeError, match="wildcard"):
+        Settings(
+            environment="production",
+            gemini_api_key="test-key",
+            app_secret="production-test-secret-that-is-long-enough",
+            demo_password="not-the-shared-demo-password",
+            allowed_origins="*",
+            gemini_model="gemini-3.5-flash-lite",
+            gemini_fallback_model="gemini-2.5-flash-lite",
+            allow_persona_header=False,
+        ).assert_production()

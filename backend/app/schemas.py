@@ -492,6 +492,10 @@ class DashboardOut(BaseModel):
     activity: list[AuditOut]
 
 
+class DemoSwitchIn(BaseModel):
+    persona: str = Field(min_length=3, max_length=20)
+
+
 class LoginIn(BaseModel):
     email: str = Field(min_length=3, max_length=160)
     password: str = Field(min_length=1, max_length=128)
