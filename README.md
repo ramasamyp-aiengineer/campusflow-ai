@@ -11,13 +11,13 @@
 | ⚡ **60-second judge path** | Open the live app → **Arjun** → My interests → **Explain & quiz me** on the FastAPI card → switch **Faculty** / **Placement** in the top bar |
 | 🔁 **Instant Persona Switcher** | Top bar: **Arjun / Faculty / Placement** — one click, seeded data, no re-signup |
 | 🔑 **Demo password** | `CampusFlow@2026` (one-click buttons on the login page) |
-| 🧪 **Evidence** | **71** backend tests · `tsc` + `next build` clean · SSRF + session auth + Gemini 503 fallbacks |
+| 🧪 **Evidence** | **82+** backend tests · `tsc` + `next build` clean · SSRF + session auth + Gemini 503 fallbacks |
 | 📦 **Source** | https://github.com/ramasamyp-aiengineer/campusflow-ai |
 
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.165-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs)
-![Gemini](https://img.shields.io/badge/Gemini-flash%20%2B%20flash--lite-4285F4?logo=googlegemini&logoColor=white)
-![Tests](https://img.shields.io/badge/backend%20tests-71%20passing-0E7C66)
+![Gemini](https://img.shields.io/badge/Gemini-3.5%20flash--lite%20pinned-4285F4?logo=googlegemini&logoColor=white)
+![Tests](https://img.shields.io/badge/backend%20tests-82%2B%20passing-0E7C66)
 
 ---
 
