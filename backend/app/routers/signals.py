@@ -47,6 +47,7 @@ from app.services.signals import (
     validate_public_url,
 )
 from app.routers.api import require
+from app.services.async_work import run_blocking
 
 router = APIRouter(prefix="/api/v1/signals")
 
@@ -78,6 +79,7 @@ def _message_out(message: SignalMessage, context: BadgeContext | None = None) ->
         badges=[StoryBadge(**badge) for badge in story_badges(message, context)] if context else [],
         task_lwi_id=message.task_lwi_id,
         quiz_passed=bool(message.quiz_passed),
+        sample=bool(message.sample),
         id=message.id,
         title=message.title,
         url=message.url,
@@ -156,7 +158,7 @@ def pulse(persona: str = Depends(require("faculty", "tpo")), db: Session = Depen
 
 @router.post("/feeds", response_model=SubscribeResult)
 @limiter.limit("6/minute")
-def subscribe(
+async def subscribe(
     request: Request,
     response: Response,
     body: FeedIn,
@@ -186,7 +188,7 @@ def subscribe(
         db.add(feed)
         db.flush()
     try:
-        stats = poll_subscription(db, student, feed)
+        stats = await run_blocking(poll_subscription, db, student, feed)
     except PermissionError:
         raise _cooldown(feed) from None
     except ValueError as exc:
@@ -246,7 +248,7 @@ def _own_message(db: Session, student, message_id: int) -> SignalMessage:
 
 @router.post("/messages/{message_id}/task", response_model=StoryTaskOut)
 @limiter.limit("10/minute")
-def story_to_task(
+async def story_to_task(
     request: Request,
     response: Response,
     message_id: int,
@@ -255,7 +257,17 @@ def story_to_task(
 ) -> StoryTaskOut:
     student = persona_user(db, persona)
     message = _own_message(db, student, message_id)
-    row, sprint, created, transport = create_story_task(db, student, message)
+    from app.services.board import SprintCapacityError
+
+    try:
+        row, sprint, created, transport = await run_blocking(create_story_task, db, student, message)
+    except SprintCapacityError as exc:
+        detail = (
+            f"You can own {exc.limit} sprints. Finish one before opening another."
+            if exc.kind == "sprints"
+            else f"This sprint is capped at {exc.limit} tickets."
+        )
+        raise HTTPException(status_code=409, detail=detail) from exc
     if created:
         audit(db, student, "signals.task", f"story={message.id} -> {row.ticket_code} via {transport}")
     db.commit()
@@ -265,7 +277,7 @@ def story_to_task(
 
 @router.post("/messages/{message_id}/explain", response_model=ExplainerOut)
 @limiter.limit("10/minute")
-def explain_story(
+async def explain_story(
     request: Request,
     response: Response,
     message_id: int,
@@ -274,7 +286,7 @@ def explain_story(
 ) -> ExplainerOut:
     student = persona_user(db, persona)
     message = _own_message(db, student, message_id)
-    card, source = build_explainer(message)
+    card, source = await run_blocking(build_explainer, message)
     db.commit()
     return ExplainerOut(
         concept=card.concept, use_case=card.use_case, question=card.question, options=card.options, source=source, quiz_passed=bool(message.quiz_passed)
@@ -326,7 +338,14 @@ def interest_analysis(feed_id: int, persona: str = Depends(require("student")), 
 
 
 @router.delete("/feeds/{feed_id}")
-def remove_feed(feed_id: int, persona: str = Depends(require("student")), db: Session = Depends(get_db)) -> dict:
+@limiter.limit("10/minute")
+def remove_feed(
+    request: Request,
+    response: Response,
+    feed_id: int,
+    persona: str = Depends(require("student")),
+    db: Session = Depends(get_db),
+) -> dict:
     student = persona_user(db, persona)
     feed = db.get(FeedSubscription, feed_id)
     if feed is None or feed.student_id != student.id:
@@ -339,7 +358,14 @@ def remove_feed(feed_id: int, persona: str = Depends(require("student")), db: Se
 
 
 @router.patch("/messages/{message_id}/read", response_model=SignalMessageOut)
-def mark_read(message_id: int, persona: str = Depends(require("student")), db: Session = Depends(get_db)) -> SignalMessageOut:
+@limiter.limit("60/minute")
+def mark_read(
+    request: Request,
+    response: Response,
+    message_id: int,
+    persona: str = Depends(require("student")),
+    db: Session = Depends(get_db),
+) -> SignalMessageOut:
     student = persona_user(db, persona)
     message = db.get(SignalMessage, message_id)
     if message is None or message.student_id != student.id:

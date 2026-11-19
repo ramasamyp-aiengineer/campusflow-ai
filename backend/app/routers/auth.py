@@ -1,3 +1,5 @@
+import secrets
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
@@ -6,8 +8,8 @@ from app.database import get_db
 from app.limiter import limiter
 from app.models import User
 from app.routers.api import bearer_token
-from app.schemas import LoginIn, LoginOut, SessionUser
-from app.security.auth import PERSONA_FOR_ROLE, authenticate, end_session, session_for, start_session
+from app.schemas import LoginIn, LoginOut, RegisterIn, SessionUser
+from app.security.auth import PERSONA_FOR_ROLE, authenticate, end_session, hash_password, session_for, start_session
 from app.services.board import audit
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -34,6 +36,42 @@ def _session_user(db: Session, authorization: str) -> tuple[str, User]:
     if user is None:
         raise HTTPException(status_code=401, detail="Sign in to continue")
     return token, user
+
+
+def _initials(name: str) -> str:
+    parts = [part for part in name.split() if part]
+    letters = "".join(part[0] for part in parts[:2]) or name[:2]
+    return letters.upper()[:4]
+
+
+@router.post("/register", response_model=LoginOut)
+@limiter.limit("5/minute")
+def register(request: Request, response: Response, body: RegisterIn, db: Session = Depends(get_db)) -> LoginOut:
+    email = body.email.strip().lower()
+    if "@" not in email or email.startswith("@") or email.endswith("@") or "." not in email.split("@")[-1]:
+        raise HTTPException(status_code=400, detail="Enter a campus email address.")
+    if db.query(User).filter(User.email == email).first():
+        raise HTTPException(status_code=409, detail="An account with that email already exists.")
+    user = User(
+        name=body.name.strip(),
+        role="STUDENT",
+        department="CSE",
+        semester=5,
+        avatar_initials=_initials(body.name),
+        anon_token=secrets.token_hex(8),
+        cgpa=0,
+        velocity_drop_pct=0,
+        is_persona=False,
+        program="B.Tech CSE",
+        email=email,
+        password_hash=hash_password(body.password),
+    )
+    db.add(user)
+    db.flush()
+    token, expires_at = start_session(db, user)
+    audit(db, user, "auth.register", "student account created")
+    db.commit()
+    return LoginOut(token=token, expires_at=expires_at, user=_user_out(user))
 
 
 @router.post("/login", response_model=LoginOut)

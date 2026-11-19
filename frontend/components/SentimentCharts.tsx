@@ -22,10 +22,15 @@ export function SentimentDonut({ counts, caption }: { counts: Record<string, num
     return [stop];
   });
   const paint = stops.length ? `conic-gradient(${stops.join(", ")})` : "conic-gradient(#E7E1D8 0% 100%)";
+  const captionId = "sentiment-donut-caption";
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="relative h-28 w-28 shrink-0" aria-hidden>
+    <div className="flex items-center gap-4" role="group" aria-labelledby={captionId}>
+      <div
+        className="relative h-28 w-28 shrink-0"
+        role="img"
+        aria-label={`Sentiment breakdown across ${total} stories`}
+      >
         <div className="h-full w-full rounded-full" style={{ background: paint }} />
         <div className="absolute inset-3 grid place-items-center rounded-full bg-[#FFFCF8]">
           <div className="text-center">
@@ -35,12 +40,14 @@ export function SentimentDonut({ counts, caption }: { counts: Record<string, num
         </div>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">{caption}</p>
+        <p id={captionId} className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+          {caption}
+        </p>
         <ul className="mt-2 space-y-1">
           {SENTIMENT_ORDER.map((label) => (
             <li key={label} className="flex items-center justify-between gap-3 text-xs">
               <span className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full" style={{ background: SENTIMENT_STYLE[label].bar }} />
+                <span className="h-2 w-2 rounded-full" style={{ background: SENTIMENT_STYLE[label].bar }} aria-hidden />
                 <span className={SENTIMENT_STYLE[label].text}>{label}</span>
               </span>
               <span className="mono text-slate-500">{counts[label] ?? 0}</span>
@@ -60,12 +67,20 @@ export function ClusterBars({ clusters }: { clusters: SignalCluster[] }) {
   return (
     <ul className="space-y-3">
       {clusters.map((cluster) => (
-        <li key={cluster.label}>
+        <li key={cluster.label} aria-label={`${cluster.label}, ${cluster.count} stories`}>
           <div className="mb-1 flex items-baseline justify-between gap-2">
             <p className="truncate text-sm font-medium text-ink">{cluster.label}</p>
             <p className="mono text-[11px] text-slate-400">{cluster.count}</p>
           </div>
-          <div className="flex h-2.5 overflow-hidden rounded-full bg-[#EFE8DC]" style={{ width: `${Math.max(18, (cluster.count / peak) * 100)}%` }}>
+          <div
+            className="flex h-2.5 overflow-hidden rounded-full bg-[#EFE8DC]"
+            style={{ width: `${Math.max(18, (cluster.count / peak) * 100)}%` }}
+            role="meter"
+            aria-valuemin={0}
+            aria-valuemax={peak}
+            aria-valuenow={cluster.count}
+            aria-label={`${cluster.label} volume`}
+          >
             {SENTIMENT_ORDER.map((label) => {
               const count = cluster.sentiments[label] ?? 0;
               if (!count) return null;

@@ -1,0 +1,52 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: campusflow-api
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "4"
+    spec:
+      containerConcurrency: 40
+      containers:
+        - image: asia-south1-docker.pkg.dev/PROJECT/campusflow/api
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ENVIRONMENT
+              value: production
+            - name: GEMINI_MODEL
+              value: gemini-3.5-flash-lite
+            - name: GEMINI_FALLBACK_MODEL
+              value: gemini-2.5-flash-lite
+            - name: ALLOW_PERSONA_HEADER
+              value: "false"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: campusflow-database-url
+                  key: latest
+            - name: APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: campusflow-app-secret
+                  key: latest
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: campusflow-gemini-key
+                  key: latest
+            - name: ALLOWED_ORIGINS
+              valueFrom:
+                secretKeyRef:
+                  name: campusflow-allowed-origins
+                  key: latest
+            - name: ALLOWED_HOSTS
+              value: campusflow-api-598899050820.asia-south1.run.app
+            - name: DEMO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: campusflow-demo-password
+                  key: latest

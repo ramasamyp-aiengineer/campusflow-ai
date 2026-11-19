@@ -1,21 +1,45 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
-import { DashboardView } from "@/components/DashboardView";
-import { FacultyView } from "@/components/FacultyView";
 import { KanbanBoard } from "@/components/KanbanBoard";
-import { PlacementView } from "@/components/PlacementView";
 import { ReasoningPill } from "@/components/ReasoningPill";
-import { SecurityView } from "@/components/SecurityView";
 import { Sidebar } from "@/components/Sidebar";
-import { SignalsView } from "@/components/SignalsView";
-import { SkillView } from "@/components/SkillView";
 import { TicketDrawer } from "@/components/TicketDrawer";
 import { TopBar } from "@/components/TopBar";
-import { TpoView } from "@/components/TpoView";
 import { ApiError, api } from "@/lib/api";
-import { SAMPLE_SYLLABUS, guardLine } from "@/lib/format";
+import { BOARD_POLL_MS, SAMPLE_SYLLABUS, guardLine } from "@/lib/format";
+
+const DashboardView = dynamic(() => import("@/components/DashboardView").then((m) => m.DashboardView), {
+  loading: () => <PanelLoading label="Dashboard" />,
+});
+const FacultyView = dynamic(() => import("@/components/FacultyView").then((m) => m.FacultyView), {
+  loading: () => <PanelLoading label="Faculty radar" />,
+});
+const PlacementView = dynamic(() => import("@/components/PlacementView").then((m) => m.PlacementView), {
+  loading: () => <PanelLoading label="Placement prep" />,
+});
+const SecurityView = dynamic(() => import("@/components/SecurityView").then((m) => m.SecurityView), {
+  loading: () => <PanelLoading label="Security posture" />,
+});
+const SignalsView = dynamic(() => import("@/components/SignalsView").then((m) => m.SignalsView), {
+  loading: () => <PanelLoading label="Signals" />,
+});
+const SkillView = dynamic(() => import("@/components/SkillView").then((m) => m.SkillView), {
+  loading: () => <PanelLoading label="Skill graph" />,
+});
+const TpoView = dynamic(() => import("@/components/TpoView").then((m) => m.TpoView), {
+  loading: () => <PanelLoading label="Readiness" />,
+});
+
+function PanelLoading({ label }: { label: string }) {
+  return (
+    <div className="grid min-h-[40vh] place-items-center p-8" role="status" aria-live="polite">
+      <p className="text-sm text-slate-500">Loading {label}…</p>
+    </div>
+  );
+}
 import type {
   AIAction,
   AIJob,
@@ -179,10 +203,12 @@ export function AppShell({
     const timer = window.setInterval(() => {
       if (document.visibilityState !== "visible") return;
       setRefreshKey((value) => value + 1);
-      setBoardKey((value) => value + 1);
-    }, 8000);
+      if (view === "board" || view === "skills" || selectedId !== null) {
+        setBoardKey((value) => value + 1);
+      }
+    }, BOARD_POLL_MS);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [view, selectedId]);
 
   useEffect(() => {
     let ignore = false;
@@ -323,7 +349,7 @@ export function AppShell({
           onMenu={() => setMenuOpen(true)}
         />
         <div className="flex min-h-0 flex-1">
-          <main className="min-w-0 flex-1">
+          <main id="main-content" className="min-w-0 flex-1">
             {view === "dashboard" && (
               <DashboardView
                 data={dashboard}
@@ -460,7 +486,7 @@ export function AppShell({
       )}
       {job && <ReasoningPill job={job} />}
       {toast && (
-        <div className={`fixed left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-sm text-white shadow-lift ${job ? "bottom-28" : "bottom-5"}`}>
+        <div role="status" aria-live="polite" className={`fixed left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-sm text-white shadow-lift ${job ? "bottom-28" : "bottom-5"}`}>
           {toast}
         </div>
       )}

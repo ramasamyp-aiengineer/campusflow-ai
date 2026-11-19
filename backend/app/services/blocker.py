@@ -49,4 +49,6 @@ def assert_can_enter(item: LearningWorkItem, new_status: str, by_id: dict[int, L
         return f"AI Review and Mastery need a scored submission of {PASS_SCORE} or above"
     if new_status == "MASTERED" and item.status != "AI_REVIEW":
         return "Mastery is recorded only after the ticket has been through AI Review"
+    if new_status == "MASTERED" and not item.cosigned_by_id:
+        return "Mastery is recorded when faculty co-sign an AI-reviewed ticket"
     return None

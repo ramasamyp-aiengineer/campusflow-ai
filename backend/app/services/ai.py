@@ -1,6 +1,5 @@
 import json
 import re
-import time
 from typing import TypeVar
 
 import httpx
@@ -373,14 +372,14 @@ def _extract_json(text: str) -> dict:
 
 
 MODEL_COOLDOWN_SECONDS = 300
-_model_resting_until: dict[str, float] = {}
 
 
 def _models_to_try() -> list[str]:
+    from app.services.runtime import model_is_resting
+
     settings = get_settings()
-    now = time.monotonic()
     chain = [name for name in dict.fromkeys([settings.gemini_model, settings.gemini_fallback_model]) if name.strip()]
-    awake = [name for name in chain if _model_resting_until.get(name, 0) <= now]
+    awake = [name for name in chain if not model_is_resting(name)]
     return awake or chain[-1:]
 
 
@@ -391,10 +390,14 @@ def _ask_model(model: str, body: dict, timeout: float) -> dict | None:
         with httpx.Client(timeout=timeout) as client:
             response = client.post(url, json=body, headers=headers)
     except httpx.HTTPError:
-        _model_resting_until[model] = time.monotonic() + MODEL_COOLDOWN_SECONDS
+        from app.services.runtime import rest_model
+
+        rest_model(model, MODEL_COOLDOWN_SECONDS)
         return None
     if response.status_code in {404, 429, 500, 502, 503, 504}:
-        _model_resting_until[model] = time.monotonic() + MODEL_COOLDOWN_SECONDS
+        from app.services.runtime import rest_model
+
+        rest_model(model, MODEL_COOLDOWN_SECONDS)
         return None
     if response.status_code >= 400:
         return None

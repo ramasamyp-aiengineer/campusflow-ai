@@ -18,7 +18,7 @@ export function TpoView({ matrix, persona }: { matrix: ReadinessMatrix | null; p
     <div className="h-full overflow-auto px-5 py-5">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Training and placement</p>
       <h1 className="text-xl font-semibold">Recruiter readiness</h1>
-      <p className="mb-4 text-sm text-slate-500">Shortlist from verified skill evidence. CGPA stays visible so a high grade without proof is obvious.</p>
+      <p className="mb-4 text-sm text-slate-500">Shortlist from recorded skill evidence. An AI review alone does not add a skill. CGPA stays visible so a high grade without proof is obvious.</p>
       {mismatch.length > 0 && (
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {mismatch.map((row) => row.name).join(", ")} would clear a CGPA screen and miss a verified-skill screen.

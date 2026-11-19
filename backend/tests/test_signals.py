@@ -192,6 +192,8 @@ def test_eight_hour_lock_and_inbox(client: TestClient):
     body = inbox.json()
     assert body["messages"]
     assert body["clusters"]
+    assert "Sample" in body["feeds"][0]["label"]
+    assert all(message["sample"] is True for message in body["messages"])
     assert any("topic" in step.lower() for step in body["pipeline"])
     held = body["feeds"][0]["items_seen"] - body["feeds"][0]["items_kept"]
     assert held >= 1

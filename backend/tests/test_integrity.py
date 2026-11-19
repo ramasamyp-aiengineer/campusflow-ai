@@ -61,13 +61,17 @@ def test_mastery_records_the_ticket_and_repeat_boosts_are_idempotent(client: Tes
     assert review.json()["result"]["readiness_score"] >= 75
     assert review.json()["lwi"]["status"] == "AI_REVIEW"
     after_eval = next(node for node in client.get(graph, headers=STUDENT).json()["skills"] if node["skill_name"] == "SQL")
-    assert after_eval["proficiency_score"] > baseline["proficiency_score"]
-    assert created["ticket_code"] in after_eval["evidence_tickets"]
+    assert after_eval["proficiency_score"] == baseline["proficiency_score"]
+    assert created["ticket_code"] not in after_eval["evidence_tickets"]
 
-    assert client.patch(f"/api/v1/lwi/{created['id']}/status", headers=STUDENT, json={"status": "MASTERED"}).status_code == 200
+    signed = client.patch(f"/api/v1/lwi/{created['id']}/cosign", headers={"X-Persona": "faculty"})
+    assert signed.status_code == 200
+    assert signed.json()["status"] == "MASTERED"
+    assert client.patch(f"/api/v1/lwi/{created['id']}/status", headers=STUDENT, json={"status": "MASTERED"}).status_code == 409
     after = next(node for node in client.get(graph, headers=STUDENT).json()["skills"] if node["skill_name"] == "SQL")
-    # Evaluate already awarded the ticket once; mastery must not raise the score again.
-    assert after["proficiency_score"] == after_eval["proficiency_score"]
+    # Faculty co-sign is what writes the skill graph.
+    assert after["proficiency_score"] > after_eval["proficiency_score"]
+    assert created["ticket_code"] in after["evidence_tickets"]
 
     with SessionLocal() as db:
         student = db.get(User, student_id)

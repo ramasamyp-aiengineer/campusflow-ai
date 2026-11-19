@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.database import SessionLocal
 from app.models import Base, LearningWorkItem, SignalMessage, SkillNode, User
-from app.services import ai
+from app.services import ai, runtime
 from app.services.seed import seed_if_empty
 from app.services.signals import article_brief, seed_signals_if_empty
 from app.services.story_actions import curriculum_drift, quiz_skill, quiz_skills
@@ -70,7 +70,8 @@ def _fake_gemini(monkeypatch, status: int, payload: dict, sent: list[str]) -> No
             return httpx.Response(status, json=payload, request=httpx.Request("POST", url))
 
     monkeypatch.setattr(get_settings(), "gemini_api_key", "test-key")
-    monkeypatch.setattr(ai, "_model_resting_until", {})
+    monkeypatch.setattr(runtime, "model_is_resting", lambda _name: False)
+    monkeypatch.setattr(runtime, "rest_model", lambda _name, _seconds: None)
     monkeypatch.setattr(ai, "httpx", SimpleNamespace(Client=FakeClient, HTTPError=httpx.HTTPError))
 
 

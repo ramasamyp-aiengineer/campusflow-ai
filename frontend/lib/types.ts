@@ -62,6 +62,8 @@ export interface LWI {
   co_tag: string;
   rubric_criteria: string[];
   ai_feedback: Record<string, unknown> | null;
+  cosigned_by_id?: number | null;
+  cosigned_at?: string | null;
 }
 
 export interface ChainNode {
@@ -240,6 +242,18 @@ export interface SignalMessage {
   badges: StoryBadge[];
   task_lwi_id: number | null;
   quiz_passed: boolean;
+  sample?: boolean;
+}
+
+export interface ReviewTicket {
+  id: number;
+  student_id: number;
+  student_name: string;
+  ticket_code: string;
+  title: string;
+  skill_tag: string;
+  readiness_score: number | null;
+  status: string;
 }
 
 export interface StoryBadge {

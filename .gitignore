@@ -22,6 +22,20 @@ frontend/.next-build/
 frontend/out/
 *.tsbuildinfo
 
+# Local probe captures
+/bad2.txt
+/bad_origin.txt
+/cors_body.txt
+/cors_headers.txt
+/docs_body.txt
+/fe_body.txt
+/health_body.txt
+/login.json
+/login_headers.txt
+/login_out.txt
+/opt.txt
+/posture.json
+
 # OS / editor
 .DS_Store
 Thumbs.db

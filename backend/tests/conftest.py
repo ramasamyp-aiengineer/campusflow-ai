@@ -13,6 +13,7 @@ os.environ["DATABASE_URL"] = f"sqlite:///{DB_PATH.as_posix()}"
 os.environ["GEMINI_API_KEY"] = ""
 os.environ["ALLOW_PERSONA_HEADER"] = "true"
 os.environ["DEMO_PASSWORD"] = "test-demo-pass"
+os.environ["APP_SECRET"] = "test-only-app-secret-that-is-at-least-32-characters"
 
 from app.main import app  # noqa: E402
 

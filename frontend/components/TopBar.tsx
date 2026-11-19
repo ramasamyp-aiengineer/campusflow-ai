@@ -76,33 +76,37 @@ export function TopBar({
             value={query}
             onChange={(event) => onQuery(event.target.value)}
             placeholder="Filter tickets, skills, CO tags"
+            aria-label="Filter tickets, skills, and CO tags"
             className="w-full bg-transparent text-sm outline-none sm:w-56"
           />
         </div>
         <div className="flex items-center gap-2">
-          <div
-            className="flex items-center rounded-full border border-line bg-canvas p-1"
-            role="group"
-            aria-label="Instant persona switcher"
-          >
-            {DEMO_ACCOUNTS.map((account) => {
-              const active = account.id === persona;
-              return (
-                <button
-                  key={account.id}
-                  type="button"
-                  disabled={switching}
-                  onClick={() => void switchPersona(account)}
-                  className={`rounded-full px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
-                    active ? "bg-ink text-white shadow-card" : "text-slate-500 hover:bg-white hover:text-ink"
-                  }`}
-                  title={`${account.name} · ${account.detail}`}
-                >
-                  {SWITCH_LABEL[account.id]}
-                </button>
-              );
-            })}
-          </div>
+          {DEMO_PASSWORD ? (
+            <div
+              className="flex items-center rounded-full border border-line bg-canvas p-1"
+              role="group"
+              aria-label="Instant persona switcher"
+            >
+              {DEMO_ACCOUNTS.map((account) => {
+                const active = account.id === persona;
+                return (
+                  <button
+                    key={account.id}
+                    type="button"
+                    disabled={switching}
+                    onClick={() => void switchPersona(account)}
+                    className={`rounded-full px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
+                      active ? "bg-ink text-white shadow-card" : "text-slate-500 hover:bg-white hover:text-ink"
+                    }`}
+                    title={`${account.name} · ${account.detail}`}
+                    aria-pressed={active}
+                  >
+                    {SWITCH_LABEL[account.id]}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
           <div className="flex items-center gap-1 rounded-full border border-line bg-canvas p-1">
             <span className="flex items-center gap-2 rounded-full bg-white px-2.5 py-1 shadow-card" title={user.email}>
               <span className="grid h-6 w-6 place-items-center rounded-full bg-brand text-[10px] font-semibold text-white">
@@ -129,7 +133,7 @@ export function TopBar({
         <span className="text-slate-500">{model}</span>
         <span className="text-[#D6CFC4]">·</span>
         <span className="min-w-0 flex-1 truncate text-slate-600">{liveLabel}</span>
-        {persona === "student" && <span className="hidden text-slate-400 sm:inline">Board refreshes every 8s</span>}
+        {persona === "student" && <span className="hidden text-slate-400 sm:inline">Board refreshes every 60s</span>}
       </div>
     </div>
   );

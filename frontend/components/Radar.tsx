@@ -6,6 +6,10 @@ export function Radar({ skills }: { skills: Skill[] }) {
   const cx = 160;
   const cy = 150;
   const radius = 92;
+  const summary =
+    points.length === 0
+      ? "No verified skills yet"
+      : `Top skills: ${points.map((skill) => `${skill.skill_name} ${skill.proficiency_score}`).join(", ")}`;
 
   const at = (index: number, scale: number) => {
     const angle = -Math.PI / 2 + (index * 2 * Math.PI) / count;
@@ -18,43 +22,63 @@ export function Radar({ skills }: { skills: Skill[] }) {
     .join(" ");
 
   return (
-    <svg viewBox="0 0 320 300" className="h-full w-full">
-      {grid.map((scale) => (
-        <polygon
-          key={scale}
-          fill="none"
-          stroke="#E2E8F0"
-          strokeWidth="1"
-          points={Array.from({ length: count }, (_, index) => at(index, scale).join(",")).join(" ")}
-        />
-      ))}
-      {Array.from({ length: count }, (_, index) => {
-        const [x, y] = at(index, 1);
-        return <line key={index} x1={cx} y1={cy} x2={x} y2={y} stroke="#E2E8F0" />;
-      })}
-      {points.length > 0 && (
-        <polygon points={polygon} fill="rgba(79, 70, 229, 0.18)" stroke="#4F46E5" strokeWidth="2" />
-      )}
-      {points.map((skill, index) => {
-        const [x, y] = at(index, skill.proficiency_score / 100);
-        const [lx, ly] = at(index, 1.18);
-        return (
-          <g key={skill.id}>
-            <circle cx={x} cy={y} r="3.5" fill="#4F46E5" />
-            <text
-              x={lx}
-              y={ly}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="#334155"
-              fontSize="11"
-              fontFamily="Plus Jakarta Sans, sans-serif"
-            >
-              {skill.skill_name.length > 18 ? `${skill.skill_name.slice(0, 16)}…` : skill.skill_name}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
+    <div>
+      <svg viewBox="0 0 320 300" className="h-full w-full" role="img" aria-label={summary}>
+        {grid.map((scale) => (
+          <polygon
+            key={scale}
+            fill="none"
+            stroke="#E2E8F0"
+            strokeWidth="1"
+            points={Array.from({ length: count }, (_, index) => at(index, scale).join(",")).join(" ")}
+          />
+        ))}
+        {Array.from({ length: count }, (_, index) => {
+          const [x, y] = at(index, 1);
+          return <line key={index} x1={cx} y1={cy} x2={x} y2={y} stroke="#E2E8F0" />;
+        })}
+        {points.length > 0 && (
+          <polygon points={polygon} fill="rgba(79, 70, 229, 0.18)" stroke="#4F46E5" strokeWidth="2" />
+        )}
+        {points.map((skill, index) => {
+          const [x, y] = at(index, skill.proficiency_score / 100);
+          const [lx, ly] = at(index, 1.18);
+          return (
+            <g key={skill.id}>
+              <circle cx={x} cy={y} r="3.5" fill="#4F46E5" />
+              <text
+                x={lx}
+                y={ly}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill="#334155"
+                fontSize="11"
+                fontFamily="Plus Jakarta Sans, sans-serif"
+                aria-hidden="true"
+              >
+                {skill.skill_name.length > 18 ? `${skill.skill_name.slice(0, 16)}…` : skill.skill_name}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <table className="sr-only">
+        <caption>Verified skill proficiency</caption>
+        <thead>
+          <tr>
+            <th scope="col">Skill</th>
+            <th scope="col">Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {points.map((skill) => (
+            <tr key={skill.id}>
+              <td>{skill.skill_name}</td>
+              <td>{skill.proficiency_score}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

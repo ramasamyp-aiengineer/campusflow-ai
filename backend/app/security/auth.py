@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import secrets
+from contextvars import ContextVar, Token
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
@@ -9,6 +10,19 @@ from app.config import get_settings
 from app.models import AuthSession, User, utcnow
 
 PERSONA_FOR_ROLE = {"STUDENT": "student", "FACULTY": "faculty", "TPO": "tpo"}
+_request_user_id: ContextVar[int | None] = ContextVar("campusflow_request_user", default=None)
+
+
+def set_request_user(user_id: int | None) -> Token:
+    return _request_user_id.set(user_id)
+
+
+def reset_request_user(token: Token) -> None:
+    _request_user_id.reset(token)
+
+
+def request_user_id() -> int | None:
+    return _request_user_id.get()
 SCRYPT_N, SCRYPT_R, SCRYPT_P = 2**14, 8, 1
 DEMO_EMAILS = {
     "STU_8921": "arjun@campusflow.edu",
@@ -41,6 +55,16 @@ def _token_hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+def purge_sessions(db: Session) -> int:
+    """Remove expired and revoked sessions so the session table stays bounded."""
+    now = utcnow()
+    return (
+        db.query(AuthSession)
+        .filter((AuthSession.expires_at <= now) | (AuthSession.revoked_at.is_not(None)))
+        .delete(synchronize_session=False)
+    )
+
+
 def authenticate(db: Session, email: str, password: str) -> User | None:
     user = db.query(User).filter(User.email == email.strip().lower()).first()
     if user is None or not user.password_hash:
@@ -50,6 +74,7 @@ def authenticate(db: Session, email: str, password: str) -> User | None:
 
 
 def start_session(db: Session, user: User) -> tuple[str, str]:
+    purge_sessions(db)
     token = secrets.token_urlsafe(32)
     expires = (datetime.now(timezone.utc) + timedelta(hours=get_settings().session_hours)).replace(microsecond=0).isoformat()
     db.add(AuthSession(token_hash=_token_hash(token), user_id=user.id, expires_at=expires))

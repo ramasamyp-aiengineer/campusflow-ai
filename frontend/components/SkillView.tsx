@@ -10,13 +10,13 @@ export function SkillView({ graph }: { graph: SkillGraph | null }) {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="mono text-xs text-slate-500">{graph.anon_token}</p>
-          <h1 className="text-xl font-semibold">Verified skill graph</h1>
-          <p className="text-sm text-slate-500">{graph.student_name} · evidence is a fingerprint of the tickets behind each score</p>
+          <h1 className="text-xl font-semibold">Skill graph</h1>
+          <p className="text-sm text-slate-500">{graph.student_name} · a score is recorded evidence. New mastery is added when faculty co-sign an AI review.</p>
         </div>
         <div className="flex items-center gap-3 rounded-2xl border border-line bg-white px-3 py-2">
           <Ring value={graph.verified_skill_score} color={scoreColor(graph.verified_skill_score)} />
           <div>
-            <p className="text-xs text-slate-500">Verified score</p>
+            <p className="text-xs text-slate-500">Evidence score</p>
             <p className="text-sm font-semibold">Mean of evidence-backed skills</p>
           </div>
         </div>

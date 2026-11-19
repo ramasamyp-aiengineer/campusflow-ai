@@ -1,5 +1,5 @@
 import { Lock, Plus } from "lucide-react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import { COLUMNS } from "@/lib/format";
 import type { LWI, Sprint, Status } from "@/lib/types";
@@ -44,7 +44,7 @@ export function KanbanBoard({
             </span>
           </div>
           <h1 className="mt-1 text-xl font-semibold tracking-tight text-ink">{sprint?.title ?? "No sprint yet"}</h1>
-          <p className="mt-1 max-w-xl text-sm text-slate-500">Move work only when the prerequisite is mastered. AI Review is the gate before a ticket can count as evidence.</p>
+          <p className="mt-1 max-w-xl text-sm text-slate-500">Move work only when the prerequisite is mastered. A passing draft is AI-reviewed. Faculty co-sign records mastery. Use the Move control on a card if you cannot drag.</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {sprint?.co_po_tags.map((tag) => (
               <span key={tag} className="mono rounded-full border border-line px-2 py-0.5 text-[10px] text-slate-500">
@@ -64,7 +64,7 @@ export function KanbanBoard({
       </div>
       {adding && <TicketComposer onClose={() => setAdding(false)} onCreate={onCreate} />}
       {blocked && (
-        <div className="mx-5 mb-3 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div role="status" className="mx-5 mb-3 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
           <Lock size={14} />
           <span>
             <span className="mono">{blocked.ticket_code}</span> is locked. {blocked.block_reason}
@@ -75,9 +75,11 @@ export function KanbanBoard({
         {COLUMNS.map((column) => {
           const cards = visible.filter((item) => item.status === column.id);
           const points = cards.reduce((sum, item) => sum + item.story_points, 0);
+          const headingId = `column-${column.id}`;
           return (
             <section
               key={column.id}
+              aria-labelledby={headingId}
               className="flex min-h-[280px] flex-col rounded-2xl bg-[#EFE8DC]/90 p-2"
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
@@ -88,17 +90,17 @@ export function KanbanBoard({
             >
               <header className="flex items-center justify-between px-2 py-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full" style={{ background: column.bar }} />
-                  <h2 className="text-sm font-semibold">{column.label}</h2>
+                  <span className="h-2 w-2 rounded-full" style={{ background: column.bar }} aria-hidden />
+                  <h2 id={headingId} className="text-sm font-semibold">{column.label}</h2>
                   <span className="mono text-[11px] text-slate-400">{cards.length}</span>
                 </div>
                 <span className="mono text-[11px] text-slate-400">{points} SP</span>
               </header>
               <div className="flex flex-1 flex-col gap-2">
                 {cards.map((item) => (
-                  <TicketCard key={item.id} item={item} onOpen={onOpen} />
+                  <TicketCard key={item.id} item={item} onOpen={onOpen} onMove={onMove} />
                 ))}
-                {cards.length === 0 && <p className="px-2 py-6 text-center text-xs text-slate-400">Drop a ticket here</p>}
+                {cards.length === 0 && <p className="px-2 py-6 text-center text-xs text-slate-400">Move a ticket here with drag or the Move control</p>}
               </div>
             </section>
           );
@@ -108,11 +110,23 @@ export function KanbanBoard({
   );
 }
 
-function TicketCard({ item, onOpen }: { item: LWI; onOpen: (id: number) => void }) {
+function TicketCard({
+  item,
+  onOpen,
+  onMove,
+}: {
+  item: LWI;
+  onOpen: (id: number) => void;
+  onMove: (id: number, status: Status) => void;
+}) {
   const dragged = useRef(false);
+  const moveId = useId();
   const accent = item.blocked ? "#BE123C" : item.status === "MASTERED" ? "#0F7A4A" : item.status === "AI_REVIEW" ? "#C47B12" : item.status === "IN_PROGRESS" ? "#0E7C66" : "#D6CFC4";
   return (
     <article
+      tabIndex={0}
+      aria-disabled={item.blocked || undefined}
+      aria-describedby={item.blocked ? `${moveId}-blocked` : undefined}
       draggable={!item.blocked}
       onDragStart={(event) => {
         if (item.blocked) {
@@ -132,7 +146,24 @@ function TicketCard({ item, onOpen }: { item: LWI; onOpen: (id: number) => void 
         if (dragged.current) return;
         onOpen(item.id);
       }}
-      className={`rounded-xl border border-line bg-white p-3 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift ${item.blocked ? "cursor-pointer opacity-95" : "cursor-grab active:cursor-grabbing"}`}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(item.id);
+          return;
+        }
+        if (item.blocked) return;
+        const index = COLUMNS.findIndex((column) => column.id === item.status);
+        if (event.key === "ArrowRight" && index < COLUMNS.length - 1) {
+          event.preventDefault();
+          onMove(item.id, COLUMNS[index + 1].id);
+        }
+        if (event.key === "ArrowLeft" && index > 0) {
+          event.preventDefault();
+          onMove(item.id, COLUMNS[index - 1].id);
+        }
+      }}
+      className={`rounded-xl border border-line bg-white p-3 shadow-card transition hover:-translate-y-0.5 hover:shadow-lift focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand ${item.blocked ? "cursor-pointer opacity-95" : "cursor-grab active:cursor-grabbing"}`}
       style={{ borderLeft: `3px solid ${accent}` }}
       title={item.blocked ? item.block_reason || "Blocked by a prerequisite" : undefined}
     >
@@ -146,11 +177,34 @@ function TicketCard({ item, onOpen }: { item: LWI; onOpen: (id: number) => void 
         <span className="mono rounded-md bg-[#E7F3EF] px-1.5 py-0.5 text-[10px] text-brand">{item.co_tag}</span>
         <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">{item.skill_tag}</span>
         {item.blocked && (
-          <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-medium text-rose-700">
+          <span id={`${moveId}-blocked`} className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-medium text-rose-700">
             <Lock size={10} /> Blocked
           </span>
         )}
       </div>
+      {!item.blocked && (
+        <label className="mt-3 block text-[10px] font-semibold uppercase tracking-wide text-slate-400" htmlFor={moveId}>
+          Move to
+          <select
+            id={moveId}
+            className="field mt-1 py-1.5 text-xs"
+            value={item.status}
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+            onChange={(event) => {
+              event.stopPropagation();
+              const next = event.target.value as Status;
+              if (next !== item.status) onMove(item.id, next);
+            }}
+          >
+            {COLUMNS.map((column) => (
+              <option key={column.id} value={column.id}>
+                {column.label} — {column.hint}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
     </article>
   );
 }

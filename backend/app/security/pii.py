@@ -1,6 +1,6 @@
 import re
 
-EMAIL = re.compile(r"\b[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}\b", re.IGNORECASE)
+EMAIL = re.compile(r"\b[A-Z0-9._%+\-]{1,64}@[A-Z0-9.\-]{1,255}\.[A-Z]{2,24}\b", re.IGNORECASE)
 PHONE = re.compile(r"(?<!\d)(?:\+91[\s\-]?)?[6-9]\d{9}(?!\d)")
 ROLL = re.compile(
     r"\b(?:RA\d{10,}|\d{2}[A-Z]{2,6}\d{3,6}|[A-Z]{2,4}\d{2}[A-Z]{2,5}\d{3,5})\b",

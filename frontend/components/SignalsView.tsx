@@ -23,7 +23,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { SentimentDonut } from "@/components/SentimentCharts";
 import { ApiError, api, safeHref } from "@/lib/api";
-import { SAMPLE_INTERESTS, SENTIMENT_ORDER, SENTIMENT_STYLE, waitLabel } from "@/lib/format";
+import { SAMPLE_INTERESTS, SENTIMENT_ORDER, SENTIMENT_STYLE, SIGNALS_POLL_MS, waitLabel } from "@/lib/format";
 import type {
   InterestAnalysis,
   InterestCluster,
@@ -78,7 +78,7 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
     load().catch((reason: Error) => setError(reason.message));
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") load().catch(() => undefined);
-    }, 12000);
+    }, SIGNALS_POLL_MS);
     return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [persona]);
@@ -358,7 +358,7 @@ function AddInterestForm({
       }}
     >
       <h2 className="text-lg text-ink">Add an interest</h2>
-      <p className="mt-0.5 text-sm text-slate-500">Pick a quick start, or paste any public RSS link. Google News search links work well.</p>
+      <p className="mt-0.5 text-sm text-slate-500">Quick starts are labeled sample stories. A pasted public RSS link is a live feed.</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {SAMPLE_INTERESTS.map((item) => (
           <button
@@ -376,13 +376,13 @@ function AddInterestForm({
         ))}
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-[220px_1fr]">
-        <label className="text-xs font-medium text-slate-500">
+        <label htmlFor="interest-topic" className="text-xs font-medium text-slate-500">
           Topic name
-          <input className="field mt-1" value={topic} onChange={(event) => onTopic(event.target.value)} placeholder="Machine Learning" required minLength={2} />
+          <input id="interest-topic" className="field mt-1" value={topic} onChange={(event) => onTopic(event.target.value)} placeholder="Machine Learning" required minLength={2} />
         </label>
-        <label className="text-xs font-medium text-slate-500">
+        <label htmlFor="interest-url" className="text-xs font-medium text-slate-500">
           RSS link
-          <input className="field mt-1" value={url} onChange={(event) => onUrl(event.target.value)} placeholder="https://news.google.com/rss/search?q=machine+learning" required />
+          <input id="interest-url" className="field mt-1" value={url} onChange={(event) => onUrl(event.target.value)} placeholder="https://news.google.com/rss/search?q=machine+learning" required />
         </label>
       </div>
       <div className="mt-4 flex justify-end gap-2">
@@ -474,6 +474,11 @@ function Article({
         </div>
       </div>
       <h3 className="display mt-3 text-[1.65rem] leading-tight text-ink">{message.title}</h3>
+      {message.sample && (
+        <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
+          Sample story. The link is a reference document, not a news article about this headline.
+        </p>
+      )}
       <p className="mt-2 text-sm text-slate-500">
         {message.source}
         {message.published_at ? ` · ${message.published_at}` : ""}
@@ -565,7 +570,7 @@ function Article({
         </button>
         {safeHref(message.url) ? (
           <a href={safeHref(message.url)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-brand">
-            Read the original <ExternalLink size={14} />
+            {message.sample ? "Open reference" : "Read the original"} <ExternalLink size={14} />
           </a>
         ) : (
           <span className="text-sm text-slate-400">Original link unavailable</span>

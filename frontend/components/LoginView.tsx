@@ -10,16 +10,35 @@ import type { LoginResult, SessionUser } from "@/lib/types";
 
 const PROMISES = [
   { icon: KanbanSquare, title: "Your semester as a sprint board", detail: "Course outcomes become tickets you can move and prove." },
-  { icon: GraduationCap, title: "Skills backed by evidence", detail: "Every verified skill links to the work that earned it." },
+  { icon: GraduationCap, title: "Skills backed by evidence", detail: "A score is recorded when faculty co-sign an AI-reviewed ticket." },
   { icon: Radar, title: "Early signals for mentors", detail: "Faculty and the placement cell see risk before exams do." },
 ];
 
 export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: (user: SessionUser) => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
   const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  async function createAccount() {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await api<LoginResult>("/api/v1/auth/register", null, {
+        method: "POST",
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
+      });
+      setToken(result.token);
+      onSignedIn(result.user);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not create the account");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function signIn(nextEmail = email, nextPassword = password) {
     setBusy(true);
@@ -74,9 +93,9 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
           <div className="lg:hidden">
             <Logo />
           </div>
-          <h2 className="display mt-8 text-[2rem] leading-tight text-ink lg:mt-0">Judge demo access</h2>
+          <h2 className="display mt-8 text-[2rem] leading-tight text-ink lg:mt-0">Sign in</h2>
           <p className="mt-1 text-sm text-slate-500">
-            One click opens a seeded workspace. Inside the app, the top-bar <span className="font-semibold text-ink">Instant Persona Switcher</span> flips Student / Faculty / Placement without leaving the board.
+            Use your campus account. Seeded Student, Faculty, and Placement workspaces stay on the buttons below for a walkthrough.
           </p>
 
           {notice && <p className="mt-5 rounded-2xl bg-[#F4E6CF] px-4 py-2.5 text-sm text-[#8A4A1C]">{notice}</p>}
@@ -85,12 +104,20 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
             className="mt-6 space-y-4"
             onSubmit={(event) => {
               event.preventDefault();
-              void signIn();
+              if (creating) void createAccount();
+              else void signIn();
             }}
           >
-            <label className="block text-xs font-medium text-slate-600">
+            {creating && (
+              <label htmlFor="login-name" className="block text-xs font-medium text-slate-600">
+                Name
+                <input id="login-name" className="field mt-1" value={name} onChange={(event) => setName(event.target.value)} required minLength={2} />
+              </label>
+            )}
+            <label htmlFor="login-email" className="block text-xs font-medium text-slate-600">
               Campus email
               <input
+                id="login-email"
                 className="field mt-1"
                 type="email"
                 autoComplete="username"
@@ -101,16 +128,18 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
                 autoFocus
               />
             </label>
-            <label className="block text-xs font-medium text-slate-600">
+            <label htmlFor="login-password" className="block text-xs font-medium text-slate-600">
               Password
               <span className="relative mt-1 block">
                 <input
+                  id="login-password"
                   className="field pr-10"
                   type={reveal ? "text" : "password"}
-                  autoComplete="current-password"
+                  autoComplete={creating ? "new-password" : "current-password"}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   required
+                  minLength={creating ? 10 : 1}
                 />
                 <button
                   type="button"
@@ -118,7 +147,7 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
                   aria-label={reveal ? "Hide password" : "Show password"}
                   className="absolute inset-y-0 right-0 grid w-10 place-items-center text-slate-400 hover:text-ink"
                 >
-                  {reveal ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {reveal ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
                 </button>
               </span>
             </label>
@@ -131,9 +160,19 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
               disabled={busy}
               className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0B6A57] disabled:opacity-60"
             >
-              <LockKeyhole size={15} /> {busy ? "Signing in…" : "Sign in"}
+              <LockKeyhole size={15} /> {busy ? "Working…" : creating ? "Create account" : "Sign in"}
             </button>
           </form>
+          <button
+            type="button"
+            className="mt-3 text-sm font-medium text-brand"
+            onClick={() => {
+              setCreating((value) => !value);
+              setError("");
+            }}
+          >
+            {creating ? "Have an account? Sign in" : "Create a student account"}
+          </button>
 
           {DEMO_PASSWORD && (
             <div className="mt-8">

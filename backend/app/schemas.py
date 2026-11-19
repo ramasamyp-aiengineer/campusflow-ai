@@ -59,6 +59,8 @@ class LWIOut(BaseModel):
     co_tag: str
     rubric_criteria: list[str]
     ai_feedback: dict | None = None
+    cosigned_by_id: int | None = None
+    cosigned_at: str | None = None
 
 
 class ChainNode(BaseModel):
@@ -272,6 +274,7 @@ class SignalMessageOut(BaseModel):
     badges: list[StoryBadge] = Field(default_factory=list)
     task_lwi_id: int | None = None
     quiz_passed: bool = False
+    sample: bool = False
 
 
 class StoryTaskOut(BaseModel):
@@ -494,6 +497,23 @@ class LoginIn(BaseModel):
     password: str = Field(min_length=1, max_length=128)
 
 
+class RegisterIn(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    email: str = Field(min_length=3, max_length=160)
+    password: str = Field(min_length=10, max_length=128)
+
+
+class ReviewTicket(BaseModel):
+    id: int
+    student_id: int
+    student_name: str
+    ticket_code: str
+    title: str
+    skill_tag: str
+    readiness_score: int | None = None
+    status: str
+
+
 class SessionUser(BaseModel):
     id: int
     name: str
@@ -515,4 +535,6 @@ class HealthOut(BaseModel):
     service: str
     database: str
     ai_mode: str
+    gemini_model: str = ""
+    fallback_golden_accuracy: float | None = None
     security: list[str]

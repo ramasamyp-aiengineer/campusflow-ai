@@ -35,8 +35,11 @@ def test_mastering_a_ticket_updates_the_skill_graph(client: TestClient):
         return next((node for node in client.get(graph_url, headers=STUDENT).json()["skills"] if node["skill_name"] == skill), None)
 
     before = node_for(ready["skill_tag"])
-    moved = client.patch(f"/api/v1/lwi/{ready['id']}/status", headers=STUDENT, json={"status": "MASTERED"})
+    denied = client.patch(f"/api/v1/lwi/{ready['id']}/status", headers=STUDENT, json={"status": "MASTERED"})
+    assert denied.status_code == 409
+    moved = client.patch(f"/api/v1/lwi/{ready['id']}/cosign", headers={"X-Persona": "faculty"})
     assert moved.status_code == 200
+    assert moved.json()["status"] == "MASTERED"
     after = node_for(ready["skill_tag"])
     assert after is not None
     assert before is None or after["last_updated"] >= before["last_updated"]
@@ -45,21 +48,25 @@ def test_mastering_a_ticket_updates_the_skill_graph(client: TestClient):
 
 
 def test_a_failing_gemini_model_rests_and_the_fallback_goes_first(monkeypatch):
-    import time
-
-    from app.services import ai
+    from app.services import ai, runtime
 
     settings = ai.get_settings()
-    monkeypatch.setattr(ai, "_model_resting_until", {})
+    monkeypatch.setattr(runtime, "model_is_resting", lambda _name: False)
     assert ai._models_to_try()[0] == settings.gemini_model
-    monkeypatch.setattr(ai, "_model_resting_until", {settings.gemini_model: time.monotonic() + 60})
+    monkeypatch.setattr(runtime, "model_is_resting", lambda name: name == settings.gemini_model)
     assert ai._models_to_try() == [settings.gemini_fallback_model]
 
 
 def test_production_settings_hide_api_docs():
     from app.config import Settings
 
-    assert Settings(environment="production", gemini_api_key="").is_production is True
+    assert Settings(
+        environment="production",
+        gemini_api_key="",
+        app_secret="production-test-secret-that-is-long-enough",
+        demo_password="non-default-test-password",
+        allow_persona_header=False,
+    ).is_production is True
     assert Settings(environment="development", gemini_api_key="").is_production is False
 
 

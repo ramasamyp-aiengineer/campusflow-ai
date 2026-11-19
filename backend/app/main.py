@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.config import get_settings
 from app.database import SessionLocal, init_db
@@ -23,9 +24,13 @@ logger = logging.getLogger("campusflow")
 
 
 def _poll_once() -> None:
+    from app.services.runtime import acquire_lease
     from app.services.signals import poll_due_feeds
 
     with SessionLocal() as db:
+        if not acquire_lease(db, "signal_poll", 840):
+            db.rollback()
+            return
         poll_due_feeds(db)
         db.commit()
 
@@ -41,6 +46,7 @@ async def _signal_loop() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    settings.assert_production()
     init_db()
     task = asyncio.create_task(_signal_loop())
     try:
@@ -62,6 +68,7 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.hosts)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.origins,
@@ -69,6 +76,24 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Persona"],
 )
+
+
+@app.middleware("http")
+async def bind_session_user(request: Request, call_next):
+    from app.security.auth import reset_request_user, session_for, set_request_user
+
+    user_id = None
+    authorization = request.headers.get("authorization", "")
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() == "bearer" and token.strip():
+        with SessionLocal() as db:
+            session = session_for(db, token.strip())
+            user_id = session.user_id if session else None
+    context = set_request_user(user_id)
+    try:
+        return await call_next(request)
+    finally:
+        reset_request_user(context)
 
 
 @app.middleware("http")
@@ -97,11 +122,16 @@ def _database_ok() -> bool:
 
 @app.get("/health", response_model=HealthOut)
 def health() -> HealthOut:
+    from app.services.golden import golden_accuracy
+
+    db_ok = _database_ok()
     return HealthOut(
-        status="ok" if _database_ok() else "degraded",
+        status="ok" if db_ok else "degraded",
         service="campusflow-ai",
-        database="ok" if _database_ok() else "error",
+        database="ok" if db_ok else "error",
         ai_mode=settings.ai_mode,
+        gemini_model=settings.gemini_model,
+        fallback_golden_accuracy=golden_accuracy(),
         security=[
             "pii_redaction",
             "prompt_injection_guard",
@@ -109,8 +139,12 @@ def health() -> HealthOut:
             "rate_limit",
             "schema_validation",
             "security_headers",
+            "trusted_host",
             "rss_8h_schedule",
             "public_feed_ssrf_guard",
+            "production_boot_guard",
+            "faculty_cosign",
+            "pinned_model",
         ],
     )
 

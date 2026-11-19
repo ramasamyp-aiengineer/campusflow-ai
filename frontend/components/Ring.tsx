@@ -4,12 +4,14 @@ export function Ring({
   color = "#4F46E5",
   track = "#E2E8F0",
   text = "#0F172A",
+  label = "Progress",
 }: {
   value: number;
   size?: number;
   color?: string;
   track?: string;
   text?: string;
+  label?: string;
 }) {
   const safe = Math.max(0, Math.min(100, Math.round(value)));
   const stroke = 4;
@@ -17,7 +19,13 @@ export function Ring({
   const circ = 2 * Math.PI * radius;
   const center = size / 2;
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-label={`${safe} percent`}>
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      role="img"
+      aria-label={`${label}: ${safe} percent`}
+    >
       <circle cx={center} cy={center} r={radius} stroke={track} strokeWidth={stroke} fill="none" />
       <circle
         cx={center}
@@ -40,6 +48,7 @@ export function Ring({
         fontSize={size < 64 ? 11 : 16}
         fontFamily="IBM Plex Mono, ui-monospace, monospace"
         fontWeight="600"
+        aria-hidden="true"
       >
         {safe}
       </text>

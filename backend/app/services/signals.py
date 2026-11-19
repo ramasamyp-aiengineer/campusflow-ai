@@ -16,9 +16,9 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from html import unescape
 from urllib.parse import urljoin, urlparse
-from xml.etree import ElementTree
 
 import httpx
+from defusedxml import ElementTree
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.orm import Session
 
@@ -619,17 +619,21 @@ def ingest_xml(db: Session, student: User, subscription: FeedSubscription, xml_t
         .all()
     )
     known = [(row, fingerprint(row.title, row.source)) for row in recent]
+    known_guids = {row.guid for row, _ in known}
+    raw_guids = [raw.guid for raw in raw_items]
+    if raw_guids:
+        known_guids.update(
+            guid
+            for (guid,) in db.query(SignalMessage.guid)
+            .filter(SignalMessage.student_id == student.id, SignalMessage.guid.in_(raw_guids))
+            .all()
+        )
     for raw in raw_items:
         decision = judge_item(raw, terms, subscription.label)
         if decision is None:
             held += 1
             continue
-        repeat = (
-            db.query(SignalMessage.id)
-            .filter(SignalMessage.student_id == student.id, SignalMessage.guid == raw.guid)
-            .first()
-        )
-        if repeat or any(row.guid == raw.guid for row, _ in known):
+        if raw.guid in known_guids:
             continue
         story_print = fingerprint(raw.title, raw.source)
         twin = next((row for row, other in known if story_similarity(story_print, other) >= FUSION_OVERLAP), None)
@@ -660,6 +664,7 @@ def ingest_xml(db: Session, student: User, subscription: FeedSubscription, xml_t
             cluster_label=decision.cluster_label,
             is_read=False,
             sources_json="[]",
+            sample=subscription.url.startswith("builtin:"),
             created_at=utcnow(),
         )
         db.add(row)
@@ -883,8 +888,8 @@ def seed_signals_if_empty(db: Session) -> None:
         return
     feed = FeedSubscription(
         student_id=student.id,
-        url="https://news.google.com/rss/search?q=SQL+OR+FastAPI+OR+campus+placement+when:7d&hl=en-IN&gl=IN&ceid=IN:en",
-        label="Google News · SQL, FastAPI, placements",
+        url=BUILTIN_URL,
+        label="Sample briefing · reference links, not live news",
         last_status="idle",
         created_at=utcnow(),
     )

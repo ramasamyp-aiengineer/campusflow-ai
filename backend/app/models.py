@@ -73,6 +73,8 @@ class LearningWorkItem(Base):
     co_tag: Mapped[str] = mapped_column(String(20), default="CO1")
     rubric_criteria: Mapped[str] = mapped_column(Text, default="[]")
     ai_feedback_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cosigned_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    cosigned_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
     created_at: Mapped[str] = mapped_column(String(40), default=utcnow)
 
 
@@ -131,7 +133,27 @@ class SignalMessage(Base):
     explainer_json: Mapped[str] = mapped_column(Text, default="")
     quiz_passed: Mapped[bool] = mapped_column(Boolean, default=False)
     quiz_lock_until: Mapped[str] = mapped_column(String(40), default="")
+    sample: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[str] = mapped_column(String(40), default=utcnow)
+
+
+class ModelCooldown(Base):
+    """Shared across processes so a model outage on one instance rests the model on the others."""
+
+    __tablename__ = "model_cooldowns"
+
+    model_name: Mapped[str] = mapped_column(String(80), primary_key=True)
+    resting_until: Mapped[float] = mapped_column(Float, default=0)
+
+
+class SchedulerLease(Base):
+    """One instance at a time runs the feed poll."""
+
+    __tablename__ = "scheduler_leases"
+
+    name: Mapped[str] = mapped_column(String(40), primary_key=True)
+    owner: Mapped[str] = mapped_column(String(64), default="")
+    expires_at: Mapped[float] = mapped_column(Float, default=0)
 
 
 class AuditEvent(Base):

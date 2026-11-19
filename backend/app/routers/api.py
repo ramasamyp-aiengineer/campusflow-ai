@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 
@@ -29,6 +30,7 @@ from app.schemas import (
     ReadinessMatrix,
     ReadinessRow,
     ReasoningStep,
+    ReviewTicket,
     SkillGraphResponse,
     StatusIn,
     TicketIn,
@@ -38,20 +40,28 @@ from app.security.auth import PERSONA_FOR_ROLE, session_for
 from app.security.pii import redact_pii
 from app.security.pipeline import guard_untrusted
 from app.services.ai import plan_evaluation, plan_jd, plan_sprint, plan_unblock
-from app.services.blocker import assert_can_enter, passing_readiness
+from app.services.blocker import PASS_SCORE, assert_can_enter, block_reason, passing_readiness
 from app.services.board import (
+    TICKET_CREATE_LIMIT,
+    TICKET_CREATE_WINDOW_SECONDS,
+    SprintCapacityError,
+    actor_for_persona,
+    assert_owned_sprint_capacity,
+    assert_sprint_capacity,
     audit,
-    blocked_core_count,
     boost_skill,
     index_items,
+    load_cohort,
     loads,
     lwis_for,
     next_ticket_code,
     persona_user,
+    recent_action_count,
     semester_progress,
     skill_out,
     skills_for,
     sprint_out,
+    sprints_out,
     student_or_404,
     to_detail,
     to_lwi,
@@ -109,6 +119,12 @@ def _trace(*labels: str) -> list[ReasoningStep]:
     return [ReasoningStep(step=index + 1, label=label) for index, label in enumerate(labels)]
 
 
+def _reject_capacity(exc: SprintCapacityError) -> HTTPException:
+    if exc.kind == "sprints":
+        return HTTPException(status_code=409, detail=f"You can own {exc.limit} sprints. Finish one before opening another.")
+    return HTTPException(status_code=409, detail=f"This sprint is capped at {exc.limit} tickets.")
+
+
 def _own_lwi(db: Session, lwi_id: int, student: User) -> LearningWorkItem:
     item = db.get(LearningWorkItem, lwi_id)
     if item is None or item.student_id != student.id:
@@ -147,9 +163,28 @@ def _persist_items(db: Session, student: User, sprint: Sprint, plan_items) -> li
 
 
 def _serialize_many(db: Session, student_id: int, sprint_id: int) -> list[LWIOut]:
-    items = lwis_for(db, student_id, sprint_id)
-    by_id = index_items(lwis_for(db, student_id))
+    all_items = lwis_for(db, student_id)
+    by_id = index_items(all_items)
+    items = [item for item in all_items if item.sprint_id == sprint_id]
     return [to_lwi(item, by_id) for item in items]
+
+
+def student_user(
+    persona: str = Depends(require("student")),
+    authorization: str = Header(default=""),
+    db: Session = Depends(get_db),
+) -> User:
+    """Signed-in student when Bearer is present; seeded persona user in header tests."""
+    return actor_for_persona(db, persona, authorization=authorization)
+
+
+
+def current_actor(
+    persona: str = Depends(current_persona),
+    authorization: str = Header(default=""),
+    db: Session = Depends(get_db),
+) -> User:
+    return actor_for_persona(db, persona, authorization=authorization)
 
 
 def _remediation(db: Session, parent: LearningWorkItem, title: str, question: str) -> LearningWorkItem:
@@ -189,8 +224,7 @@ def _remediation(db: Session, parent: LearningWorkItem, title: str, question: st
 
 
 @router.get("/bootstrap", response_model=Bootstrap)
-def bootstrap(persona: str = Depends(current_persona), db: Session = Depends(get_db)) -> Bootstrap:
-    actor = persona_user(db, persona)
+def bootstrap(actor: User = Depends(current_actor), db: Session = Depends(get_db)) -> Bootstrap:
     student = actor if actor.role == "STUDENT" else persona_user(db, "student")
     sprints = visible_sprints(db, student.id)
     from app.config import get_settings
@@ -212,7 +246,7 @@ def bootstrap(persona: str = Depends(current_persona), db: Session = Depends(get
         institution=INSTITUTION,
         semester_label="Sem 5 · 2026–27",
         semester_progress=semester_progress(db, student.id),
-        sprints=[sprint_out(db, sprint, student.id) for sprint in sprints],
+        sprints=sprints_out(db, sprints, student.id),
         ai_mode=get_settings().ai_mode,
         security={
             "rbac": True,
@@ -229,36 +263,44 @@ def bootstrap(persona: str = Depends(current_persona), db: Session = Depends(get
 
 
 @router.get("/dashboard", response_model=DashboardOut)
-def dashboard(persona: str = Depends(require("student")), db: Session = Depends(get_db)) -> DashboardOut:
+def dashboard(student: User = Depends(student_user), db: Session = Depends(get_db)) -> DashboardOut:
     from app.services.dashboard import build_dashboard
 
-    return DashboardOut(**build_dashboard(db, persona_user(db, persona)))
+    return DashboardOut(**build_dashboard(db, student))
 
 
 @router.get("/sprints/{sprint_id}/board", response_model=list[LWIOut])
-def board(sprint_id: int, persona: str = Depends(require("student")), db: Session = Depends(get_db)) -> list[LWIOut]:
-    student = persona_user(db, persona)
+def board(sprint_id: int, student: User = Depends(student_user), db: Session = Depends(get_db)) -> list[LWIOut]:
     sprint = db.get(Sprint, sprint_id)
     if sprint is None:
         raise HTTPException(status_code=404, detail="Sprint not found")
+    if sprint.owner_student_id not in (None, student.id):
+        has_work = (
+            db.query(LearningWorkItem.id)
+            .filter(LearningWorkItem.sprint_id == sprint.id, LearningWorkItem.student_id == student.id)
+            .first()
+        )
+        if not has_work:
+            raise HTTPException(status_code=404, detail="Sprint not found")
     return _serialize_many(db, student.id, sprint.id)
 
 
 @router.get("/lwi/{lwi_id}", response_model=LWIDetail)
-def lwi_detail(lwi_id: int, persona: str = Depends(require("student")), db: Session = Depends(get_db)) -> LWIDetail:
-    student = persona_user(db, persona)
+def lwi_detail(lwi_id: int, student: User = Depends(student_user), db: Session = Depends(get_db)) -> LWIDetail:
     item = _own_lwi(db, lwi_id, student)
     return to_detail(item, lwis_for(db, student.id))
 
 
 @router.patch("/lwi/{lwi_id}/status", response_model=LWIOut)
+@limiter.limit("30/minute")
 def move_status(
     lwi_id: int,
+    request: Request,
+    response: Response,
     body: StatusIn,
-    persona: str = Depends(require("student")),
+    student: User = Depends(student_user),
     db: Session = Depends(get_db),
 ) -> LWIOut:
-    student = persona_user(db, persona)
     item = _own_lwi(db, lwi_id, student)
     items = lwis_for(db, student.id)
     by_id = index_items(items)
@@ -278,14 +320,50 @@ def move_status(
     return to_lwi(item, index_items(lwis_for(db, student.id)))
 
 
-@router.post("/sprints/{sprint_id}/tickets", response_model=LWIOut)
-def create_ticket(
-    sprint_id: int,
-    body: TicketIn,
-    persona: str = Depends(require("student")),
+@router.patch("/lwi/{lwi_id}/cosign", response_model=LWIOut)
+@limiter.limit("30/minute")
+def cosign_lwi(
+    lwi_id: int,
+    request: Request,
+    response: Response,
+    persona: str = Depends(require("faculty")),
+    authorization: str = Header(default=""),
     db: Session = Depends(get_db),
 ) -> LWIOut:
-    student = persona_user(db, persona)
+    faculty = actor_for_persona(db, persona, authorization=authorization)
+    item = db.get(LearningWorkItem, lwi_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Learning work item not found")
+    score = passing_readiness(item)
+    if item.status != "AI_REVIEW" or score is None:
+        raise HTTPException(status_code=409, detail="Only a passing AI-reviewed ticket can be co-signed")
+    by_id = index_items(lwis_for(db, item.student_id))
+    blocked = block_reason(item, by_id)
+    if blocked:
+        raise HTTPException(status_code=409, detail=blocked)
+    student = db.get(User, item.student_id)
+    if student is None:
+        raise HTTPException(status_code=404, detail="Student not found")
+    item.cosigned_by_id = faculty.id
+    item.cosigned_at = utcnow()
+    item.status = "MASTERED"
+    boost_skill(db, student, item.skill_tag, item.ticket_code, score)
+    audit(db, faculty, "lwi.cosign", f"{item.ticket_code} score={score}")
+    db.commit()
+    db.refresh(item)
+    return to_lwi(item, index_items(lwis_for(db, item.student_id)))
+
+
+@router.post("/sprints/{sprint_id}/tickets", response_model=LWIOut)
+@limiter.limit("10/minute")
+def create_ticket(
+    sprint_id: int,
+    request: Request,
+    response: Response,
+    body: TicketIn,
+    student: User = Depends(student_user),
+    db: Session = Depends(get_db),
+) -> LWIOut:
     sprint = db.get(Sprint, sprint_id)
     if sprint is None:
         raise HTTPException(status_code=404, detail="Sprint not found")
@@ -296,6 +374,12 @@ def create_ticket(
     )
     if sprint.owner_student_id != student.id and not has_work:
         raise HTTPException(status_code=404, detail="Sprint not found")
+    if recent_action_count(db, student, "lwi.create", TICKET_CREATE_WINDOW_SECONDS) >= TICKET_CREATE_LIMIT:
+        raise HTTPException(status_code=429, detail="Ticket creation is limited to 8 a minute.")
+    try:
+        assert_sprint_capacity(db, student.id, sprint.id)
+    except SprintCapacityError as exc:
+        raise _reject_capacity(exc) from exc
     title, _, _ = redact_pii(body.title.strip())
     description, _, _ = redact_pii(body.description.strip())
     kind = body.type.strip().upper()
@@ -329,16 +413,19 @@ def create_ticket(
 
 @router.post("/sprints/generate", response_model=GenerateResponse)
 @limiter.limit("10/minute")
-def generate_sprint(
+async def generate_sprint(
     request: Request,
     response: Response,
     body: GenerateIn,
-    persona: str = Depends(require("student")),
+    student: User = Depends(student_user),
     db: Session = Depends(get_db),
 ) -> GenerateResponse:
-    student = persona_user(db, persona)
     try:
-        plan, guarded = plan_sprint(body.title, body.course_code, body.syllabus, body.duration_weeks)
+        assert_owned_sprint_capacity(db, student.id)
+    except SprintCapacityError as exc:
+        raise _reject_capacity(exc) from exc
+    try:
+        plan, guarded = await asyncio.to_thread(plan_sprint, body.title, body.course_code, body.syllabus, body.duration_weeks)
     except Exception:
         from app.services.ai import fallback_sprint
 
@@ -376,18 +463,17 @@ def generate_sprint(
 
 @router.post("/lwi/{lwi_id}/unblock", response_model=AIActionResponse)
 @limiter.limit("10/minute")
-def unblock(
+async def unblock(
     request: Request,
     response: Response,
     lwi_id: int,
     body: UnblockIn,
-    persona: str = Depends(require("student")),
+    student: User = Depends(student_user),
     db: Session = Depends(get_db),
 ) -> AIActionResponse:
-    student = persona_user(db, persona)
     item = _own_lwi(db, lwi_id, student)
     try:
-        result, guarded = plan_unblock(body.message, item.skill_tag, item.ticket_code)
+        result, guarded = await asyncio.to_thread(plan_unblock, body.message, item.skill_tag, item.ticket_code)
     except Exception:
         from app.services.ai import fallback_evaluation
 
@@ -425,15 +511,14 @@ def unblock(
 
 @router.post("/lwi/{lwi_id}/evaluate", response_model=AIActionResponse)
 @limiter.limit("10/minute")
-def evaluate(
+async def evaluate(
     request: Request,
     response: Response,
     lwi_id: int,
     body: EvaluateIn,
-    persona: str = Depends(require("student")),
+    student: User = Depends(student_user),
     db: Session = Depends(get_db),
 ) -> AIActionResponse:
-    student = persona_user(db, persona)
     item = _own_lwi(db, lwi_id, student)
     rubric = []
     try:
@@ -441,7 +526,7 @@ def evaluate(
     except json.JSONDecodeError:
         rubric = []
     try:
-        result, guarded = plan_evaluation(body.submission, rubric, item.skill_tag, item.ticket_code)
+        result, guarded = await asyncio.to_thread(plan_evaluation, body.submission, rubric, item.skill_tag, item.ticket_code)
     except Exception:
         from app.services.ai import fallback_evaluation
 
@@ -455,15 +540,12 @@ def evaluate(
             result.remediation_title or f"15-min: {item.skill_tag} gap",
             result.guiding_question,
         )
-    else:
-        score = result.readiness_score or 0
-        boost_skill(db, student, item.skill_tag, item.ticket_code, score)
     item.ai_feedback_json = result.model_dump_json()
     if not result.refused_direct_solution:
         score = result.readiness_score or 0
         items = lwis_for(db, student.id)
         by_id = index_items(items)
-        if score >= 75 and item.status in {"BACKLOG", "IN_PROGRESS"} and not assert_can_enter(item, "AI_REVIEW", by_id):
+        if score >= PASS_SCORE and item.status in {"BACKLOG", "IN_PROGRESS"} and not assert_can_enter(item, "AI_REVIEW", by_id):
             item.status = "AI_REVIEW"
     audit(
         db,
@@ -475,7 +557,7 @@ def evaluate(
     fresh = index_items(lwis_for(db, student.id))
     return AIActionResponse(
         result=result,
-        reasoning_trace=_trace("Parsing rubric", "Checking edge cases", "Updating skill graph"),
+        reasoning_trace=_trace("Parsing rubric", "Checking edge cases", "Recording the AI review"),
         lwi=to_lwi(fresh[item.id], fresh),
         remediation_lwi=to_lwi(fresh[remediation.id], fresh) if remediation else None,
         skills=[skill_out(node) for node in skills_for(db, student.id)],
@@ -485,17 +567,20 @@ def evaluate(
 
 @router.post("/placement/analyze-jd", response_model=JDResponse)
 @limiter.limit("10/minute")
-def analyze_jd(
+async def analyze_jd(
     request: Request,
     response: Response,
     body: JDIn,
-    persona: str = Depends(require("student")),
+    student: User = Depends(student_user),
     db: Session = Depends(get_db),
 ) -> JDResponse:
-    student = persona_user(db, persona)
+    try:
+        assert_owned_sprint_capacity(db, student.id)
+    except SprintCapacityError as exc:
+        raise _reject_capacity(exc) from exc
     scores = {node.skill_name: node.proficiency_score for node in skills_for(db, student.id)}
     try:
-        plan, guarded = plan_jd(body.job_description, scores)
+        plan, guarded = await asyncio.to_thread(plan_jd, body.job_description, scores)
     except Exception:
         from app.services.ai import fallback_jd
 
@@ -534,9 +619,10 @@ def analyze_jd(
 def skill_graph(
     student_id: int,
     persona: str = Depends(require("student", "faculty", "tpo")),
+    authorization: str = Header(default=""),
     db: Session = Depends(get_db),
 ) -> SkillGraphResponse:
-    actor = persona_user(db, persona)
+    actor = actor_for_persona(db, persona, authorization=authorization)
     if persona == "student" and actor.id != student_id:
         raise HTTPException(status_code=403, detail="Students can open only their own skill graph")
     student = student_or_404(db, student_id)
@@ -550,13 +636,42 @@ def skill_graph(
     )
 
 
+@router.get("/faculty/review-queue", response_model=list[ReviewTicket])
+def review_queue(persona: str = Depends(require("faculty")), db: Session = Depends(get_db)) -> list[ReviewTicket]:
+    persona_user(db, persona)
+    items = (
+        db.query(LearningWorkItem)
+        .filter(LearningWorkItem.status == "AI_REVIEW")
+        .order_by(LearningWorkItem.id)
+        .all()
+    )
+    student_ids = {item.student_id for item in items}
+    users = {
+        user.id: user
+        for user in (db.query(User).filter(User.id.in_(student_ids)).all() if student_ids else [])
+    }
+    return [
+        ReviewTicket(
+            id=item.id,
+            student_id=item.student_id,
+            student_name=users[item.student_id].name if item.student_id in users else "Student",
+            ticket_code=item.ticket_code,
+            title=item.title,
+            skill_tag=item.skill_tag,
+            readiness_score=passing_readiness(item),
+            status=item.status,
+        )
+        for item in items
+    ]
+
+
 @router.get("/faculty/cohort-health", response_model=CohortHealth)
 def cohort_health(persona: str = Depends(require("faculty")), db: Session = Depends(get_db)) -> CohortHealth:
-    students = db.query(User).filter(User.role == "STUDENT").order_by(User.id).all()
     rows: list[CohortStudent] = []
-    for student in students:
-        nodes = skills_for(db, student.id)
-        blocked = blocked_core_count(db, student.id)
+    for entry in load_cohort(db):
+        student = entry["student"]
+        nodes = entry["nodes"]
+        blocked = entry["blocked"]
         reasons: list[str] = []
         if student.velocity_drop_pct > 35:
             reasons.append(f"Sprint velocity dropped {student.velocity_drop_pct:.0f}%")
@@ -575,7 +690,7 @@ def cohort_health(persona: str = Depends(require("faculty")), db: Session = Depe
                 risk_reasons=reasons,
                 top_gap=top_gap(nodes),
                 anon_token=student.anon_token,
-                verified_skill_score=verified_average(nodes),
+                verified_skill_score=entry["score"],
             )
         )
     cohort = len(rows) or 1
@@ -590,11 +705,11 @@ def cohort_health(persona: str = Depends(require("faculty")), db: Session = Depe
 
 @router.get("/tpo/readiness", response_model=ReadinessMatrix)
 def readiness(persona: str = Depends(require("tpo", "faculty")), db: Session = Depends(get_db)) -> ReadinessMatrix:
-    students = db.query(User).filter(User.role == "STUDENT").order_by(User.id).all()
     rows: list[ReadinessRow] = []
-    for student in students:
-        nodes = skills_for(db, student.id)
-        score = verified_average(nodes)
+    for entry in load_cohort(db):
+        student = entry["student"]
+        nodes = entry["nodes"]
+        score = entry["score"]
         top = [node.skill_name for node in nodes[:3]]
         hashes = [node.evidence_hash for node in nodes if node.evidence_hash][:3]
         rows.append(
@@ -622,10 +737,11 @@ def security_preview(
     response: Response,
     body: PreviewIn,
     persona: str = Depends(current_persona),
+    authorization: str = Header(default=""),
     db: Session = Depends(get_db),
 ) -> PreviewOut:
     guarded = guard_untrusted(body.text)
-    actor = persona_user(db, persona)
+    actor = actor_for_persona(db, persona, authorization=authorization)
     audit(db, actor, "security.preview", f"redactions={guarded.meta.redactions} flags={len(guarded.meta.injection_flags)}")
     db.commit()
     return PreviewOut(

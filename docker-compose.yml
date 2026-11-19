@@ -6,4 +6,9 @@ services:
     environment:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
-      ENVIRONMENT: production
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      # Local compose stays in development. Production is deploy/cloudrun.yaml, which rejects localhost origins.
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      APP_SECRET: ${APP_SECRET:?Set APP_SECRET to a random production secret}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:?Set DEMO_PASSWORD to a non-default password}
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-127.0.0.1}

@@ -7,13 +7,19 @@ export const COLUMNS: { id: Status; label: string; hint: string; bar: string }[]
   { id: "MASTERED", label: "Mastered", hint: "Evidence kept", bar: "#059669" },
 ];
 
-export const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "CampusFlow@2026";
+/** Empty in production builds unless NEXT_PUBLIC_DEMO_PASSWORD is set for the hackathon demo. */
+export const DEMO_PASSWORD =
+  process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? (process.env.NODE_ENV === "production" ? "" : "CampusFlow@2026");
 
 export const DEMO_ACCOUNTS: { id: Persona; name: string; detail: string; initials: string; email: string }[] = [
   { id: "student", name: "Arjun K.", detail: "Student · 3rd Year CSE", initials: "AK", email: "arjun@campusflow.edu" },
   { id: "faculty", name: "Dr. Meenakshi", detail: "Faculty · DBMS & Cloud", initials: "DM", email: "meenakshi@campusflow.edu" },
   { id: "tpo", name: "Placement Cell", detail: "Training & Placement", initials: "TP", email: "placement@campusflow.edu" },
 ];
+
+/** Full-app refresh cadence — avoid hammering Cloud Run on an open tab. */
+export const BOARD_POLL_MS = 60_000;
+export const SIGNALS_POLL_MS = 60_000;
 
 export function scoreColor(score: number): string {
   if (score >= 75) return "#059669";

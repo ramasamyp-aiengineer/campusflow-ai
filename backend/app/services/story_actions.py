@@ -205,7 +205,9 @@ def reading_sprint(db: Session, student: User) -> Sprint:
     )
     if sprint is not None:
         return sprint
-    from app.services.board import window_dates
+    from app.services.board import assert_owned_sprint_capacity, window_dates
+
+    assert_owned_sprint_capacity(db, student.id)
 
     start, end = window_dates(4)
     sprint = Sprint(
@@ -231,6 +233,9 @@ def create_story_task(db: Session, student: User, message: SignalMessage) -> tup
             return existing, db.get(Sprint, existing.sprint_id), False, "existing"
     plan, transport = plan_story_task(message)
     sprint = reading_sprint(db, student)
+    from app.services.board import assert_sprint_capacity
+
+    assert_sprint_capacity(db, student.id, sprint.id)
     title, _, _ = redact_pii(plain(plan.title))
     description, _, _ = redact_pii(plain(plan.description))
     row = LearningWorkItem(
@@ -286,7 +291,9 @@ class QuizLocked(Exception):
 
 
 def _quiz_answer_index(message_id: int, option_count: int = 3) -> int:
-    secret = get_settings().app_secret.strip() or "campusflow-dev-secret"
+    secret = get_settings().app_secret.strip()
+    if not secret:
+        raise RuntimeError("APP_SECRET is required to generate quiz answers")
     digest = hashlib.sha256(f"{secret}:{message_id}".encode()).hexdigest()
     return int(digest, 16) % max(1, option_count)
 

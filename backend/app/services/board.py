@@ -1,12 +1,24 @@
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
 from app.models import AuditEvent, LearningWorkItem, SkillNode, Sprint, User, utcnow
 from app.schemas import ChainNode, LWIDetail, LWIOut, SkillOut, SprintOut
-from app.services.blocker import block_reason
+from app.services.blocker import PASS_SCORE, block_reason
+
+MAX_TICKETS_PER_SPRINT = 24
+MAX_OWNED_SPRINTS = 8
+TICKET_CREATE_LIMIT = 8
+TICKET_CREATE_WINDOW_SECONDS = 60
+
+
+class SprintCapacityError(Exception):
+    def __init__(self, limit: int, kind: str):
+        self.limit = limit
+        self.kind = kind
+        super().__init__(kind)
 
 CORE_SKILLS = {
     "SQL",
@@ -34,7 +46,15 @@ def loads(raw: str | None, fallback):
 
 
 def persona_user(db: Session, persona: str) -> User:
+    """The signed-in account when the request has a session. Seeded persona only for header tests."""
+    from app.security.auth import request_user_id
+
     role = {"student": "STUDENT", "faculty": "FACULTY", "tpo": "TPO"}[persona]
+    bound = request_user_id()
+    if bound is not None:
+        user = db.get(User, bound)
+        if user is not None and user.role == role:
+            return user
     user = (
         db.query(User)
         .filter(User.role == role, User.is_persona.is_(True))
@@ -99,6 +119,8 @@ def to_lwi(item: LearningWorkItem, by_id: dict[int, LearningWorkItem]) -> LWIOut
         co_tag=item.co_tag,
         rubric_criteria=loads(item.rubric_criteria, []),
         ai_feedback=feedback if isinstance(feedback, dict) else None,
+        cosigned_by_id=item.cosigned_by_id,
+        cosigned_at=item.cosigned_at,
     )
 
 
@@ -147,8 +169,7 @@ def to_detail(item: LearningWorkItem, items: list[LearningWorkItem]) -> LWIDetai
     )
 
 
-def sprint_out(db: Session, sprint: Sprint, student_id: int) -> SprintOut:
-    items = lwis_for(db, student_id, sprint.id)
+def _sprint_out_from_items(sprint: Sprint, items: list[LearningWorkItem]) -> SprintOut:
     total = len(items)
     mastered = sum(1 for item in items if item.status == "MASTERED")
     points = sum(item.story_points for item in items) or 1
@@ -165,6 +186,20 @@ def sprint_out(db: Session, sprint: Sprint, student_id: int) -> SprintOut:
         mastered_count=mastered,
         progress_percent=round(100 * mastered_points / points) if total else 0,
     )
+
+
+def sprint_out(db: Session, sprint: Sprint, student_id: int) -> SprintOut:
+    return _sprint_out_from_items(sprint, lwis_for(db, student_id, sprint.id))
+
+
+def sprints_out(db: Session, sprints: list[Sprint], student_id: int) -> list[SprintOut]:
+    """One LWI query for every visible sprint instead of one query per sprint."""
+    all_items = lwis_for(db, student_id)
+    by_sprint: dict[int, list[LearningWorkItem]] = {sprint.id: [] for sprint in sprints}
+    for item in all_items:
+        if item.sprint_id in by_sprint:
+            by_sprint[item.sprint_id].append(item)
+    return [_sprint_out_from_items(sprint, by_sprint.get(sprint.id, [])) for sprint in sprints]
 
 
 def visible_sprints(db: Session, student_id: int) -> list[Sprint]:
@@ -223,6 +258,44 @@ def skills_for(db: Session, student_id: int) -> list[SkillNode]:
     )
 
 
+def skills_by_student(db: Session, student_ids: list[int]) -> dict[int, list[SkillNode]]:
+    """One query for cohort/TPO views instead of N+1 skills_for calls."""
+    grouped: dict[int, list[SkillNode]] = {student_id: [] for student_id in student_ids}
+    if not student_ids:
+        return grouped
+    rows = (
+        db.query(SkillNode)
+        .filter(SkillNode.student_id.in_(student_ids))
+        .order_by(SkillNode.student_id, SkillNode.proficiency_score.desc(), SkillNode.skill_name)
+        .all()
+    )
+    for node in rows:
+        grouped.setdefault(node.student_id, []).append(node)
+    return grouped
+
+
+def actor_for_persona(
+    db: Session,
+    persona: str,
+    *,
+    authorization: str = "",
+) -> User:
+    """Prefer the signed-in session user; fall back to seeded persona for tests."""
+    from app.security.auth import session_for
+
+    scheme, _, token = authorization.partition(" ")
+    raw = token.strip() if scheme.lower() == "bearer" else ""
+    if raw:
+        session = session_for(db, raw)
+        if session:
+            user = db.get(User, session.user_id)
+            if user is not None:
+                role = {"student": "STUDENT", "faculty": "FACULTY", "tpo": "TPO"}[persona]
+                if user.role == role:
+                    return user
+    return persona_user(db, persona)
+
+
 def verified_average(nodes: list[SkillNode]) -> int:
     if not nodes:
         return 0
@@ -230,7 +303,7 @@ def verified_average(nodes: list[SkillNode]) -> int:
 
 
 def boost_skill(db: Session, student: User, skill: str, ticket_code: str, score: int) -> None:
-    if score < 70:
+    if score < PASS_SCORE:
         return
     node = (
         db.query(SkillNode)
@@ -262,18 +335,29 @@ def boost_skill(db: Session, student: User, skill: str, ticket_code: str, score:
 
 
 def blocked_core_count(db: Session, student_id: int) -> int:
+    return blocked_core_counts(db, [student_id]).get(student_id, 0)
+
+
+def blocked_core_counts(db: Session, student_ids: list[int]) -> dict[int, int]:
+    """Batch blocked-core tallies for cohort health."""
+    counts = {student_id: 0 for student_id in student_ids}
+    if not student_ids:
+        return counts
     items = (
         db.query(LearningWorkItem)
         .join(Sprint, Sprint.id == LearningWorkItem.sprint_id)
-        .filter(LearningWorkItem.student_id == student_id, Sprint.kind == "COURSE")
+        .filter(LearningWorkItem.student_id.in_(student_ids), Sprint.kind == "COURSE")
         .all()
     )
-    by_id = index_items(items)
-    count = 0
+    by_student: dict[int, list[LearningWorkItem]] = {}
     for item in items:
-        if item.skill_tag in CORE_SKILLS and block_reason(item, by_id):
-            count += 1
-    return count
+        by_student.setdefault(item.student_id, []).append(item)
+    for student_id, rows in by_student.items():
+        by_id = index_items(rows)
+        counts[student_id] = sum(
+            1 for item in rows if item.skill_tag in CORE_SKILLS and block_reason(item, by_id)
+        )
+    return counts
 
 
 def top_gap(nodes: list[SkillNode]) -> str | None:
@@ -287,7 +371,76 @@ def top_gap(nodes: list[SkillNode]) -> str | None:
 
 def window_dates(weeks: int) -> tuple[str, str]:
     start = datetime.now(timezone.utc).date()
-    from datetime import timedelta
-
     end = start + timedelta(days=7 * weeks)
     return start.isoformat(), end.isoformat()
+
+
+def sprint_ticket_count(db: Session, student_id: int, sprint_id: int) -> int:
+    return (
+        db.query(LearningWorkItem)
+        .filter(LearningWorkItem.student_id == student_id, LearningWorkItem.sprint_id == sprint_id)
+        .count()
+    )
+
+
+def assert_sprint_capacity(db: Session, student_id: int, sprint_id: int) -> None:
+    if sprint_ticket_count(db, student_id, sprint_id) >= MAX_TICKETS_PER_SPRINT:
+        raise SprintCapacityError(MAX_TICKETS_PER_SPRINT, "tickets")
+
+
+def assert_owned_sprint_capacity(db: Session, student_id: int) -> None:
+    owned = db.query(Sprint).filter(Sprint.owner_student_id == student_id).count()
+    if owned >= MAX_OWNED_SPRINTS:
+        raise SprintCapacityError(MAX_OWNED_SPRINTS, "sprints")
+
+
+def recent_action_count(db: Session, actor: User, action: str, seconds: int) -> int:
+    cutoff = (datetime.now(timezone.utc) - timedelta(seconds=seconds)).replace(microsecond=0).isoformat()
+    return (
+        db.query(AuditEvent)
+        .filter(
+            AuditEvent.actor_token == actor.anon_token,
+            AuditEvent.action == action,
+            AuditEvent.created_at >= cutoff,
+        )
+        .count()
+    )
+
+
+def load_cohort(db: Session) -> list[dict]:
+    """One query for students, one for skills, one for course tickets."""
+    students = db.query(User).filter(User.role == "STUDENT").order_by(User.id).all()
+    ids = [student.id for student in students]
+    if not ids:
+        return []
+    nodes = db.query(SkillNode).filter(SkillNode.student_id.in_(ids)).all()
+    items = (
+        db.query(LearningWorkItem)
+        .join(Sprint, Sprint.id == LearningWorkItem.sprint_id)
+        .filter(LearningWorkItem.student_id.in_(ids), Sprint.kind == "COURSE")
+        .all()
+    )
+    nodes_by: dict[int, list[SkillNode]] = {}
+    for node in nodes:
+        nodes_by.setdefault(node.student_id, []).append(node)
+    items_by: dict[int, list[LearningWorkItem]] = {}
+    for item in items:
+        items_by.setdefault(item.student_id, []).append(item)
+    rows = []
+    for student in students:
+        skill_nodes = sorted(
+            nodes_by.get(student.id, []),
+            key=lambda node: (-node.proficiency_score, node.skill_name),
+        )
+        student_items = items_by.get(student.id, [])
+        by_id = index_items(student_items)
+        blocked = sum(1 for item in student_items if item.skill_tag in CORE_SKILLS and block_reason(item, by_id))
+        rows.append(
+            {
+                "student": student,
+                "nodes": skill_nodes,
+                "blocked": blocked,
+                "score": verified_average(skill_nodes),
+            }
+        )
+    return rows
