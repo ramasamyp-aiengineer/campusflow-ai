@@ -8,28 +8,34 @@ Built CampusFlow AI for Prompt War 2026 — Theme 2: AI for Education.
 
 Campus portals still run as PDFs, WhatsApp deadlines, and CGPA shortlists. Students paste prompts into chatbots, faculty only see struggle after midterms, and syllabi lag industry by years.
 
-CampusFlow closes that loop:
+Main closed-loop workflow
+Syllabus → agile learning tickets → Socratic Gemini tutor → AI review → faculty co-sign mastery → evidence on the skill graph → placement JD prep.
 
-Syllabus → agile learning tickets → Socratic Gemini tutor → AI review → faculty co-sign mastery → skill graph → RSS industry briefs → curriculum drift radar for mentors and placement.
+RSS industry-signal workflow (My interests)
+1. Subscribe to a Google News / industry RSS feed (or a one-click sample interest)
+2. SSRF-safe fetch — public http(s) only, size-capped, no localhost / metadata hosts
+3. Filter stories against the student’s skill graph and open tickets
+4. Fuse the same headline across feeds into one card with real outlet links
+5. Act: Turn into LAB-1xx sprint task · or Explain & quiz me (+2 XP on first correct)
+6. Faculty / Placement see cohort sentiment + curriculum drift (In syllabus vs Not in syllabus)
 
-Key features
-• Sprint boards from course outcomes, with prerequisite blockers
-• Anti-cheating Socratic unblocker and rubric scoring (pass ≥ 75)
-• Mastery recorded only when faculty co-sign an AI-reviewed ticket
-• Industry RSS with SSRF-safe fetches, story fusion, and LAB tickets
-• Cohort health + drift radar for faculty and TPO
-• Production guards: session auth, pinned Gemini models, golden-set accuracy on /health
+What judges can click live
+• Sprint boards with prerequisite blockers
+• Anti-cheating Socratic unblocker + rubric pass ≥ 75
+• Mastery only after faculty co-sign an AI-reviewed ticket
+• Full RSS path above — sample briefing cards are labeled; paste a real RSS URL for live news
+• Cohort health + drift radar for mentors and TPO
 
 Stack: Next.js 15 · FastAPI · SQLAlchemy · Google Gemini · Cloud Run · Vercel
 
 Live demo: https://campusflow-ai-five.vercel.app  
-(Use the one-click Arjun / Faculty / Placement buttons)
+Judge path: Arjun → My interests → Explain & quiz / Turn into lab → Faculty / Placement in the top bar
 
 GitHub: https://github.com/ramasamyp-aiengineer/campusflow-ai
 
 Grateful to AI Geeks Chennai and the Hack2skill team for Prompt War 2026.
 
-#PromptWar #PromptWars2026 #AIGeeksChennai #Hack2skill #AIforEducation #BuildWithAI #Gemini #Nextjs #FastAPI
+#PromptWar #PromptWars2026 #AIGeeksChennai #Hack2skill #AIforEducation #BuildWithAI #Gemini #RSS #Nextjs #FastAPI
 
 ---
 
