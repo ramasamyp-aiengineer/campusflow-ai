@@ -19,7 +19,7 @@ import {
   Trash2,
   TrendingUp,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { SentimentDonut } from "@/components/SentimentCharts";
 import { ApiError, api, safeHref } from "@/lib/api";
@@ -67,12 +67,12 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
   const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState(0);
 
-  async function load() {
+  const load = useCallback(async () => {
     const data = await api<SignalInbox>("/api/v1/signals", persona);
     setInbox(data);
     setTopicId((current) => (current && data.feeds.some((feed) => feed.id === current) ? current : data.feeds[0]?.id ?? null));
     setVersion((value) => value + 1);
-  }
+  }, [persona]);
 
   useEffect(() => {
     load().catch((reason: Error) => setError(reason.message));
@@ -80,8 +80,7 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
       if (document.visibilityState === "visible") load().catch(() => undefined);
     }, SIGNALS_POLL_MS);
     return () => window.clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [persona]);
+  }, [load]);
 
   useEffect(() => {
     if (topicId === null) {

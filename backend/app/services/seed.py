@@ -347,7 +347,7 @@ def seed_if_empty(db: Session) -> None:
         co_tag="CO1",
         rubric=RA_RUBRIC,
     )
-    storage = _lwi(
+    _lwi(
         db,
         sprint_id=dbms.id,
         student_id=arjun.id,
@@ -439,7 +439,7 @@ def seed_if_empty(db: Session) -> None:
         co_tag="CO3",
         rubric=OS_RUBRIC,
     )
-    api_epic = _lwi(
+    _lwi(
         db,
         sprint_id=capstone.id,
         student_id=arjun.id,

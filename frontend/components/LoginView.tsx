@@ -4,7 +4,7 @@ import { ArrowRight, Eye, EyeOff, GraduationCap, KanbanSquare, LockKeyhole, Rada
 import { useState } from "react";
 
 import { api } from "@/lib/api";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/lib/format";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD, DEMO_SWITCH_ENABLED } from "@/lib/format";
 import { setToken } from "@/lib/session";
 import type { LoginResult, SessionUser } from "@/lib/types";
 
@@ -191,7 +191,7 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
             {creating ? "Have an account? Sign in" : "Create a student account"}
           </button>
 
-          {true && (
+          {DEMO_SWITCH_ENABLED && (
             <div className="mt-8">
               <div className="flex items-center gap-3">
                 <span className="h-px flex-1 bg-line" />

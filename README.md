@@ -11,13 +11,14 @@
 | ⚡ **60-second judge path** | Open the live app → **Arjun** → My interests → **Explain & quiz me** on the FastAPI card → switch **Faculty** / **Placement** in the top bar |
 | 🔁 **Instant Persona Switcher** | Top bar: **Arjun / Faculty / Placement** — one click, seeded data, no re-signup |
 | 🔑 **Demo password** | `CampusFlow@2026` (one-click buttons on the login page) |
-| 🧪 **Evidence** | **82+** backend tests · `tsc` + `next build` clean · SSRF + session auth + Gemini 503 fallbacks |
+| 🧪 **Evidence** | **90** backend tests · Ruff + ESLint in CI · `tsc` + `next build` clean · SSRF + session auth + Gemini 503 fallbacks |
 | 📦 **Source** | https://github.com/ramasamyp-aiengineer/campusflow-ai |
 
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.165-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs)
 ![Gemini](https://img.shields.io/badge/Gemini-3.5%20flash--lite%20pinned-4285F4?logo=googlegemini&logoColor=white)
-![Tests](https://img.shields.io/badge/backend%20tests-82%2B%20passing-0E7C66)
+![Tests](https://img.shields.io/badge/backend%20tests-90%20passing-0E7C66)
+![Lint](https://img.shields.io/badge/lint-ruff%20%2B%20eslint-0E7C66)
 
 ---
 
@@ -179,7 +180,7 @@ flowchart TB
   - Security headers: `nosniff`, `X-Frame-Options: DENY`, `no-referrer`.
   - CORS and Host headers use exact allow-lists, and `/docs` is hidden in production.
   - The digest-pinned container runs as a non-root user, exposes a health check, and every AI action writes an audit event.
-- **Tests:** `pytest` gives **82 passing backend tests**, covering SSRF cases, redirects, oversized feeds, entities, injection, RBAC, sessions, story fusion, idempotent tasks, quiz XP, mastery farming paths, the drift radar, the dashboard, the cold-start demo data, and a simulated Gemini 503 across every AI feature. Frontend adds Vitest unit tests, a11y contracts, `tsc --noEmit`, and `next build`.
+- **Tests:** `pytest` gives **90 passing backend tests**, covering SSRF cases, redirects, oversized feeds, entities, injection, RBAC, sessions, story fusion, idempotent tasks, quiz XP, mastery farming paths, the drift radar, the dashboard, the cold-start demo data, and a simulated Gemini 503 across every AI feature. Frontend adds Vitest unit tests, a11y contracts, ESLint, `tsc --noEmit`, and `next build`. CI runs Ruff on the API and lint + tests on the web app.
 
 ## 7. Tech Stack and Local Setup
 

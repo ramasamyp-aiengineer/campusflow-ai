@@ -1,16 +1,15 @@
-from app.security.injection import detect_injection, neutralize_injection
 import hashlib
 import json
-
-from fastapi.testclient import TestClient
 
 from app.config import get_settings
 from app.database import SessionLocal
 from app.models import SignalMessage, SkillNode, User
+from app.security.injection import detect_injection, neutralize_injection
 from app.services.ai import fallback_evaluation, looks_like_full_solution, wants_direct_solution
 from app.services.board import boost_skill, loads
 from app.services.signals import parse_feed
 from app.services.story_actions import _quiz_answer_index, fallback_explainer
+from fastapi.testclient import TestClient
 
 STUDENT = {"X-Persona": "student"}
 
@@ -167,6 +166,7 @@ def test_local_explainer_is_frozen_before_quiz(client: TestClient, monkeypatch):
     }
     body = {"candidates": [{"content": {"parts": [{"text": json.dumps(recovered)}]}}]}
     from types import SimpleNamespace
+
     import httpx
     from app.services import ai, runtime
 

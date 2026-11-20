@@ -1,10 +1,9 @@
 import pytest
-from fastapi.testclient import TestClient
-
 from app.database import SessionLocal
 from app.models import AuditEvent, SchedulerLease, User, utcnow
 from app.services.golden import golden_accuracy, golden_rows
 from app.services.runtime import acquire_lease
+from fastapi.testclient import TestClient
 
 
 def test_fallback_reviewer_matches_the_golden_set():

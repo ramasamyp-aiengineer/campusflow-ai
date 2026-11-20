@@ -1,3 +1,5 @@
+"""Guarded Gemini calls with schema validation and deterministic fallbacks."""
+
 import json
 import re
 from typing import TypeVar

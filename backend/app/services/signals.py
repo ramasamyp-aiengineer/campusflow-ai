@@ -13,7 +13,7 @@ import json
 import re
 import socket
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from html import unescape
 from urllib.parse import urljoin, urlparse
 
@@ -255,7 +255,7 @@ class KeptItem:
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc).replace(microsecond=0)
+    return datetime.now(UTC).replace(microsecond=0)
 
 
 def _iso(moment: datetime) -> str:
@@ -437,7 +437,7 @@ def profile_terms(db: Session, student_id: int) -> set[str]:
     return terms
 
 
-def _cluster_for(blob: str, skip: frozenset[str] = frozenset()) -> tuple[str, int]:
+def cluster_for(blob: str, skip: frozenset[str] = frozenset()) -> tuple[str, int]:
     tokens = tokens_of(blob)
     best = ("Campus briefing", 0)
     for label, words in TOPICS:
@@ -470,7 +470,7 @@ def judge_item(item: RawItem, terms: set[str], interest: str = "") -> KeptItem |
     tokens = tokens_of(blob)
     matched = sorted({term for term in terms if len(term) > 3 and mentions(term, blob, tokens)})
     wanted = sorted({term for term in interest_terms(interest) if mentions(term, blob, tokens)})
-    cluster, topic_hits = _cluster_for(blob)
+    cluster, topic_hits = cluster_for(blob)
     score = min(100, len(matched) * 18 + topic_hits * 8 + len(wanted) * 20)
     if topic_hits >= 2:
         score = max(score, 48 + topic_hits * 6)
@@ -526,7 +526,7 @@ def hours_remaining(subscription: FeedSubscription, now: datetime | None = None)
     moment = now or _now()
     due = datetime.fromisoformat(subscription.next_poll_at)
     if due.tzinfo is None:
-        due = due.replace(tzinfo=timezone.utc)
+        due = due.replace(tzinfo=UTC)
     return (due - moment).total_seconds() / 3600
 
 
@@ -704,7 +704,7 @@ STOPWORDS = {
     "news", "says", "said", "year", "today", "report", "reports", "latest", "india", "indian", "will", "your",
     "over", "amid", "here", "how", "why", "new", "also", "first", "week", "times", "express", "hindu", "live",
     "boost", "driven", "announces", "announced", "launches", "launched", "concludes", "eyes", "highlights",
-    "growing", "global", "programme", "program", "plans", "make", "makes", "takes", "gets", "back", "more",
+    "growing", "global", "programme", "program", "plans", "make", "makes", "takes", "gets", "back",
 }
 OTHER_STORIES = "Other stories"
 MAX_KEYWORD_GROUPS = 5
@@ -716,7 +716,7 @@ def own_topics(interest: str) -> frozenset[str]:
 
 
 def subtopic_for(title: str, summary: str, skip: frozenset[str] = frozenset()) -> str:
-    label, hits = _cluster_for(f"{title} {summary}".lower(), skip)
+    label, hits = cluster_for(f"{title} {summary}".lower(), skip)
     return label if hits else "General"
 
 

@@ -1,20 +1,19 @@
 import httpx
 import pytest
-from fastapi.testclient import TestClient
-
 from app.services import signals
 from app.services.signals import (
     BRIEFING_XML,
     _check_peer,
-    _cluster_for,
     analyze_sentiment,
     article_brief,
+    cluster_for,
     fetch_feed,
     judge_item,
     local_brief,
     parse_feed,
     validate_public_url,
 )
+from fastapi.testclient import TestClient
 
 
 def test_semantic_filter_drops_unrelated_public_items():
@@ -107,7 +106,7 @@ def test_words_inside_other_words_do_not_count():
     label, _score, _reason = analyze_sentiment("the company announced layoffs after the data breaches")
     assert label == "Critical"
     blob = "rapid growth in the capital market for authors"
-    assert _cluster_for(blob)[0] != "Backend platforms"
+    assert cluster_for(blob)[0] != "Backend platforms"
 
 
 def test_four_tone_labels_cover_every_case():

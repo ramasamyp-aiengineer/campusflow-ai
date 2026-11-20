@@ -1,6 +1,8 @@
+"""Sprint boards, skill evidence, cohort batches, and ticket capacity rules."""
+
 import hashlib
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -370,7 +372,7 @@ def top_gap(nodes: list[SkillNode]) -> str | None:
 
 
 def window_dates(weeks: int) -> tuple[str, str]:
-    start = datetime.now(timezone.utc).date()
+    start = datetime.now(UTC).date()
     end = start + timedelta(days=7 * weeks)
     return start.isoformat(), end.isoformat()
 
@@ -395,7 +397,7 @@ def assert_owned_sprint_capacity(db: Session, student_id: int) -> None:
 
 
 def recent_action_count(db: Session, actor: User, action: str, seconds: int) -> int:
-    cutoff = (datetime.now(timezone.utc) - timedelta(seconds=seconds)).replace(microsecond=0).isoformat()
+    cutoff = (datetime.now(UTC) - timedelta(seconds=seconds)).replace(microsecond=0).isoformat()
     return (
         db.query(AuditEvent)
         .filter(
@@ -407,39 +409,25 @@ def recent_action_count(db: Session, actor: User, action: str, seconds: int) -> 
     )
 
 
-def load_cohort(db: Session) -> list[dict]:
-    """One query for students, one for skills, one for course tickets."""
+def load_cohort(db: Session) -> list[dict[str, object]]:
+    """Batch students, skills, and blocked-core tallies for faculty and TPO views."""
     students = db.query(User).filter(User.role == "STUDENT").order_by(User.id).all()
     ids = [student.id for student in students]
     if not ids:
         return []
-    nodes = db.query(SkillNode).filter(SkillNode.student_id.in_(ids)).all()
-    items = (
-        db.query(LearningWorkItem)
-        .join(Sprint, Sprint.id == LearningWorkItem.sprint_id)
-        .filter(LearningWorkItem.student_id.in_(ids), Sprint.kind == "COURSE")
-        .all()
-    )
-    nodes_by: dict[int, list[SkillNode]] = {}
-    for node in nodes:
-        nodes_by.setdefault(node.student_id, []).append(node)
-    items_by: dict[int, list[LearningWorkItem]] = {}
-    for item in items:
-        items_by.setdefault(item.student_id, []).append(item)
-    rows = []
+    nodes_by = skills_by_student(db, ids)
+    blocked_by = blocked_core_counts(db, ids)
+    rows: list[dict[str, object]] = []
     for student in students:
         skill_nodes = sorted(
             nodes_by.get(student.id, []),
             key=lambda node: (-node.proficiency_score, node.skill_name),
         )
-        student_items = items_by.get(student.id, [])
-        by_id = index_items(student_items)
-        blocked = sum(1 for item in student_items if item.skill_tag in CORE_SKILLS and block_reason(item, by_id))
         rows.append(
             {
                 "student": student,
                 "nodes": skill_nodes,
-                "blocked": blocked,
+                "blocked": blocked_by.get(student.id, 0),
                 "score": verified_average(skill_nodes),
             }
         )

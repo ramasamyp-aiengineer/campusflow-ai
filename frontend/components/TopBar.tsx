@@ -2,7 +2,7 @@ import { LogOut, Menu, Search } from "lucide-react";
 import { useState } from "react";
 
 import { api } from "@/lib/api";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD, waitLabel } from "@/lib/format";
+import { DEMO_ACCOUNTS, DEMO_SWITCH_ENABLED, waitLabel } from "@/lib/format";
 import { clearToken, setToken } from "@/lib/session";
 import type { Bootstrap, LoginResult, Persona, SessionUser } from "@/lib/types";
 
@@ -81,7 +81,7 @@ export function TopBar({
           />
         </div>
         <div className="flex items-center gap-2">
-          {true ? (
+          {DEMO_SWITCH_ENABLED ? (
             <div
               className="flex items-center rounded-full border border-line bg-canvas p-1"
               role="group"

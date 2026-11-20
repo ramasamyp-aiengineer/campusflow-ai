@@ -1,8 +1,7 @@
-from fastapi.testclient import TestClient
-
-from app.services.signals import FUSION_OVERLAP, fingerprint, story_similarity
 from app.models import SignalMessage
+from app.services.signals import FUSION_OVERLAP, fingerprint, story_similarity
 from app.services.story_actions import Explainer, graph_skill, skills_in
+from fastapi.testclient import TestClient
 
 STUDENT = {"X-Persona": "student"}
 
@@ -106,9 +105,10 @@ def test_explain_and_quiz_award_xp_once(client: TestClient):
     assert len(explainer["options"]) == 3
     assert "answer_index" not in explainer and "why" not in explainer
 
+    import json
+
     from app.database import SessionLocal
     from app.models import SignalMessage
-    import json
 
     with SessionLocal() as db:
         answer = json.loads(db.get(SignalMessage, story["id"]).explainer_json)["card"]["answer_index"]

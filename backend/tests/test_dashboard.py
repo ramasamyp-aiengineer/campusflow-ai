@@ -1,6 +1,5 @@
-from fastapi.testclient import TestClient
-
 from app.services.dashboard import ActionInputs, next_actions
+from fastapi.testclient import TestClient
 
 STUDENT = {"X-Persona": "student"}
 VIEWS = {"board", "signals", "skills", "placement"}

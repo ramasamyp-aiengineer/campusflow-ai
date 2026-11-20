@@ -184,7 +184,7 @@ export function AppShell({
     return () => {
       ignore = true;
     };
-  }, [view, refreshKey]);
+  }, [view, persona, refreshKey]);
 
   useEffect(() => {
     if (view !== "tpo") return;

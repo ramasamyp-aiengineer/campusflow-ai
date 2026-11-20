@@ -1,10 +1,9 @@
 import pytest
-from fastapi.testclient import TestClient
-
 from app.config import Settings, get_settings
 from app.database import SessionLocal
 from app.models import User
 from app.services.board import blocked_core_count, load_cohort, skills_for
+from fastapi.testclient import TestClient
 
 
 def test_production_boot_rejects_missing_demo_password(monkeypatch):

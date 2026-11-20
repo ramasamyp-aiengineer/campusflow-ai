@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { DriftRadar } from "@/components/DriftRadar";
 import { ClusterBars, SentimentDonut, sentimentCounts } from "@/components/SentimentCharts";
@@ -10,11 +10,12 @@ export function FacultyView({ cohort, persona }: { cohort: CohortHealth | null; 
   const [queue, setQueue] = useState<ReviewTicket[]>([]);
   const [queueError, setQueueError] = useState("");
 
-  function loadQueue() {
+  const loadQueue = useCallback(() => {
     api<ReviewTicket[]>("/api/v1/faculty/review-queue", persona)
       .then(setQueue)
       .catch((reason: Error) => setQueueError(reason.message));
-  }
+  }, [persona]);
+
   useEffect(() => {
     let ignore = false;
     api<SignalPulse>("/api/v1/signals/pulse", persona)
@@ -26,7 +27,7 @@ export function FacultyView({ cohort, persona }: { cohort: CohortHealth | null; 
     return () => {
       ignore = true;
     };
-  }, [persona]);
+  }, [persona, loadQueue]);
 
   async function cosign(ticketId: number) {
     setQueueError("");

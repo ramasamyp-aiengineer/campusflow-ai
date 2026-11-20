@@ -17,13 +17,13 @@ body {
     radial-gradient(920px 280px at 8% -8%, rgba(196, 107, 44, 0.14), transparent 58%),
     #f6f3ee;
   color: #241c16;
-  font-family: Outfit, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 h1,
 h2,
 .display {
-  font-family: Fraunces, Georgia, serif;
+  font-family: var(--font-display), Georgia, serif;
   letter-spacing: -0.02em;
 }
 
@@ -43,7 +43,7 @@ textarea {
 }
 
 .mono {
-  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
 }
 
 .surface {

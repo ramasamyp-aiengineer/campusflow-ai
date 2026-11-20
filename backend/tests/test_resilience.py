@@ -3,10 +3,6 @@ from types import SimpleNamespace
 
 import httpx
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-
 from app.config import get_settings
 from app.database import SessionLocal
 from app.models import Base, LearningWorkItem, SignalMessage, SkillNode, User
@@ -14,6 +10,9 @@ from app.services import ai, runtime
 from app.services.seed import seed_if_empty
 from app.services.signals import article_brief, seed_signals_if_empty
 from app.services.story_actions import curriculum_drift, quiz_skill, quiz_skills
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
 STUDENT = {"X-Persona": "student"}
 STUDENT_NAMES = ("Arjun", "Priya", "Rohan", "Sneha", "Vikram", "Ananya", "STU_8921")

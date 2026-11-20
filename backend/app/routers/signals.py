@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.limiter import limiter
 from app.models import FeedSubscription, SignalMessage
+from app.routers.api import require
 from app.schemas import (
     ClusterOut,
     DriftRadar,
@@ -23,20 +24,12 @@ from app.schemas import (
     StoryTaskOut,
     SubscribeResult,
 )
+from app.services.async_work import run_blocking
 from app.services.board import audit, index_items, lwis_for, persona_user, sprint_out, to_lwi
-from app.services.story_actions import (
-    BadgeContext,
-    QuizLocked,
-    answer_quiz,
-    build_explainer,
-    create_story_task,
-    curriculum_drift,
-    story_badges,
-)
 from app.services.signals import (
+    BRIEFING_XML,
     BUILTIN_FEEDS,
     BUILTIN_URL,
-    BRIEFING_XML,
     POLL_HOURS,
     analyze_interest,
     hours_remaining,
@@ -46,8 +39,15 @@ from app.services.signals import (
     story_sources,
     validate_public_url,
 )
-from app.routers.api import require
-from app.services.async_work import run_blocking
+from app.services.story_actions import (
+    BadgeContext,
+    QuizLocked,
+    answer_quiz,
+    build_explainer,
+    create_story_task,
+    curriculum_drift,
+    story_badges,
+)
 
 router = APIRouter(prefix="/api/v1/signals")
 

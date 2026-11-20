@@ -1,14 +1,18 @@
+"""Classroom, faculty, placement, and security HTTP routes."""
+
 import asyncio
 import json
+import logging
 import re
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.database import get_db
 from app.limiter import limiter
-from app.models import LearningWorkItem, Sprint, User
+from app.models import LearningWorkItem, Sprint, User, utcnow
 from app.schemas import (
     AIActionResponse,
     AuditOut,
@@ -21,7 +25,6 @@ from app.schemas import (
     GenerateResponse,
     JDIn,
     JDResponse,
-    UnblockIn,
     LWIDetail,
     LWIOut,
     PostureOut,
@@ -34,8 +37,8 @@ from app.schemas import (
     SkillGraphResponse,
     StatusIn,
     TicketIn,
+    UnblockIn,
 )
-from app.config import get_settings
 from app.security.auth import PERSONA_FOR_ROLE, session_for
 from app.security.pii import redact_pii
 from app.security.pipeline import guard_untrusted
@@ -52,7 +55,6 @@ from app.services.board import (
     boost_skill,
     index_items,
     load_cohort,
-    loads,
     lwis_for,
     next_ticket_code,
     persona_user,
@@ -70,8 +72,8 @@ from app.services.board import (
     visible_sprints,
     window_dates,
 )
-from app.models import utcnow
 
+logger = logging.getLogger("campusflow.api")
 router = APIRouter(prefix="/api/v1")
 
 INSTITUTION = {
@@ -427,6 +429,7 @@ async def generate_sprint(
     try:
         plan, guarded = await asyncio.to_thread(plan_sprint, body.title, body.course_code, body.syllabus, body.duration_weeks)
     except Exception:
+        logger.exception("Sprint planning fell back to the deterministic engine")
         from app.services.ai import fallback_sprint
 
         plan = fallback_sprint(body.title, body.course_code, body.syllabus, body.duration_weeks)
@@ -475,6 +478,7 @@ async def unblock(
     try:
         result, guarded = await asyncio.to_thread(plan_unblock, body.message, item.skill_tag, item.ticket_code)
     except Exception:
+        logger.exception("Unblock planning fell back to the deterministic engine")
         from app.services.ai import fallback_evaluation
 
         result = fallback_evaluation(body.message, [], item.skill_tag)
@@ -528,6 +532,7 @@ async def evaluate(
     try:
         result, guarded = await asyncio.to_thread(plan_evaluation, body.submission, rubric, item.skill_tag, item.ticket_code)
     except Exception:
+        logger.exception("Evaluation fell back to the deterministic engine")
         from app.services.ai import fallback_evaluation
 
         result = fallback_evaluation(body.submission, rubric, item.skill_tag)
@@ -582,6 +587,7 @@ async def analyze_jd(
     try:
         plan, guarded = await asyncio.to_thread(plan_jd, body.job_description, scores)
     except Exception:
+        logger.exception("JD planning fell back to the deterministic engine")
         from app.services.ai import fallback_jd
 
         plan = fallback_jd(body.job_description, scores)
@@ -638,7 +644,6 @@ def skill_graph(
 
 @router.get("/faculty/review-queue", response_model=list[ReviewTicket])
 def review_queue(persona: str = Depends(require("faculty")), db: Session = Depends(get_db)) -> list[ReviewTicket]:
-    persona_user(db, persona)
     items = (
         db.query(LearningWorkItem)
         .filter(LearningWorkItem.status == "AI_REVIEW")

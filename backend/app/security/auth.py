@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import secrets
 from contextvars import ContextVar, Token
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -76,7 +76,7 @@ def authenticate(db: Session, email: str, password: str) -> User | None:
 def start_session(db: Session, user: User) -> tuple[str, str]:
     purge_sessions(db)
     token = secrets.token_urlsafe(32)
-    expires = (datetime.now(timezone.utc) + timedelta(hours=get_settings().session_hours)).replace(microsecond=0).isoformat()
+    expires = (datetime.now(UTC) + timedelta(hours=get_settings().session_hours)).replace(microsecond=0).isoformat()
     db.add(AuthSession(token_hash=_token_hash(token), user_id=user.id, expires_at=expires))
     return token, expires
 

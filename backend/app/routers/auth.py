@@ -10,7 +10,15 @@ from app.limiter import limiter
 from app.models import User
 from app.routers.api import bearer_token
 from app.schemas import DemoSwitchIn, LoginIn, LoginOut, RegisterIn, SessionUser
-from app.security.auth import DEMO_EMAILS, PERSONA_FOR_ROLE, authenticate, end_session, hash_password, session_for, start_session
+from app.security.auth import (
+    DEMO_EMAILS,
+    PERSONA_FOR_ROLE,
+    authenticate,
+    end_session,
+    hash_password,
+    session_for,
+    start_session,
+)
 from app.services.board import audit
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])

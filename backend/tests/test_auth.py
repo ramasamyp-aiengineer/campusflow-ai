@@ -1,9 +1,8 @@
-from fastapi.testclient import TestClient
-
 from app.config import get_settings
 from app.database import SessionLocal
 from app.models import AuthSession, User
 from app.security.auth import _token_hash, hash_password, session_for, verify_password
+from fastapi.testclient import TestClient
 
 ARJUN = {"email": "arjun@campusflow.edu", "password": "test-demo-pass"}
 

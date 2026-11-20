@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timedelta, timezone
+import logging
+from datetime import UTC, datetime, timedelta
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
 from sqlalchemy.orm import Session
@@ -17,12 +18,14 @@ from app.services.signals import (
     STOPWORDS,
     TOPICS,
     WORD,
-    _cluster_for,
+    cluster_for,
     mentions,
     plain,
     subtopic_for,
     tokens_of,
 )
+
+logger = logging.getLogger("campusflow.story_actions")
 
 SKILL_HINTS: dict[str, tuple[str, ...]] = {
     "SQL": ("sql", "join", "query", "postgres", "database"),
@@ -180,6 +183,7 @@ def plan_story_task(message: SignalMessage) -> tuple[StoryTaskPlan, str]:
             StoryTaskPlan,
         )
     except Exception:
+        logger.exception("Story-to-lab planning fell back to the deterministic engine")
         plan, transport = None, "deterministic-fallback"
     if plan is None:
         return fallback_task(message), "deterministic-fallback"
@@ -269,7 +273,7 @@ class Explainer(BaseModel):
     why: str = Field(min_length=8, max_length=300)
 
     @model_validator(mode="after")
-    def _answer_in_range(self) -> "Explainer":
+    def _answer_in_range(self) -> Explainer:
         if self.answer_index >= len(self.options) or any(not option.strip() for option in self.options):
             raise ValueError("answer_index must point at a non-empty option")
         return self
@@ -301,7 +305,7 @@ def _quiz_answer_index(message_id: int, option_count: int = 3) -> int:
 def fallback_explainer(message: SignalMessage) -> Explainer:
     body = plain(message.summary or message.brief or message.title)
     sentences = [part.strip() for part in SENTENCE.split(body) if part.strip()]
-    label, hits = _cluster_for(story_text(message))
+    label, hits = cluster_for(story_text(message))
     correct = label if hits else (skills_in(story_text(message)) or ["Software engineering"])[0]
     others = [topic for topic, _ in TOPICS if topic != correct]
     offset = message.id % len(others)
@@ -350,6 +354,7 @@ def build_explainer(message: SignalMessage) -> tuple[Explainer, str]:
             Explainer,
         )
     except Exception:
+        logger.exception("Story explainer fell back to the deterministic engine")
         card, transport = None, "deterministic-fallback"
     source = "gemini" if card is not None and transport == "gemini" else "local"
     if card is None:
@@ -382,7 +387,7 @@ def quiz_skill(db: Session, student: User, names: list[str]) -> SkillNode | None
 
 
 def answer_quiz(db: Session, student: User, message: SignalMessage, choice: int) -> dict:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if message.quiz_lock_until:
         try:
             locked = datetime.fromisoformat(message.quiz_lock_until)
@@ -390,7 +395,7 @@ def answer_quiz(db: Session, student: User, message: SignalMessage, choice: int)
             locked = None
         if locked is not None:
             if locked.tzinfo is None:
-                locked = locked.replace(tzinfo=timezone.utc)
+                locked = locked.replace(tzinfo=UTC)
             remaining = int((locked - now).total_seconds())
             if remaining > 0:
                 raise QuizLocked(remaining)

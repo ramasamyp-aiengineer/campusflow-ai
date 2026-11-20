@@ -27,6 +27,7 @@ jobs:
             backend/requirements.txt
             backend/requirements-dev.txt
       - run: python -m pip install -r requirements-dev.txt
+      - run: python -m ruff check app tests
       - run: python -m pytest -q
       - run: python -m pip_audit -r requirements.txt
       - run: python -m bandit -q -r app -ll

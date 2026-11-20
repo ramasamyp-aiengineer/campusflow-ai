@@ -125,7 +125,7 @@ function TicketCard({
   return (
     <article
       tabIndex={0}
-      aria-disabled={item.blocked || undefined}
+      data-blocked={item.blocked || undefined}
       aria-describedby={item.blocked ? `${moveId}-blocked` : undefined}
       draggable={!item.blocked}
       onDragStart={(event) => {
