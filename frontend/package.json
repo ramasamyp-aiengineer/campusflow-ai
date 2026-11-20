@@ -41,7 +41,7 @@
     "prettier": "3.6.2",
     "rollup": "npm:@rollup/wasm-node",
     "tailwindcss": "3.4.19",
-    "typescript": "5.9.3",
+    "typescript": "7.0.2",
     "vitest": "5.1.1"
   },
   "overrides": {
