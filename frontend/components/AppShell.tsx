@@ -104,7 +104,9 @@ export function AppShell({
       .then((data) => {
         if (ignore) return;
         setBoot(data);
-        setSprintId((current) => (current && data.sprints.some((sprint) => sprint.id === current) ? current : data.sprints[0]?.id ?? null));
+        setSprintId((current) =>
+          current && data.sprints.some((sprint) => sprint.id === current) ? current : (data.sprints[0]?.id ?? null),
+        );
       })
       .catch((reason: Error) => {
         if (!ignore) setBootError(reason.message || "CampusFlow API is not reachable.");
@@ -262,7 +264,11 @@ export function AppShell({
     try {
       const result = await api<T>(path, persona, { method: "POST", body: JSON.stringify(body) });
       const guard = (result as { guard?: AIAction["guard"] }).guard;
-      setJob((current) => (current && current.id === id ? { ...current, done: true, active: steps.length, foot: guardLine(guard) } : current));
+      setJob((current) =>
+        current && current.id === id
+          ? { ...current, done: true, active: steps.length, foot: guardLine(guard) }
+          : current,
+      );
       window.setTimeout(() => setJob((current) => (current?.id === id ? null : current)), 1400);
       return result;
     } catch (reason) {
@@ -309,7 +315,10 @@ export function AppShell({
           <h1 className="text-lg font-semibold">API is not reachable</h1>
           <p className="mt-2 text-sm text-slate-600">{bootError}</p>
           <p className="mt-2 text-xs text-slate-500">Start the FastAPI server on port 8000, then retry.</p>
-          <button onClick={() => setRefreshKey((value) => value + 1)} className="mt-4 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white">
+          <button
+            onClick={() => setRefreshKey((value) => value + 1)}
+            className="mt-4 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white"
+          >
             Retry
           </button>
         </div>
@@ -486,7 +495,11 @@ export function AppShell({
       )}
       {job && <ReasoningPill job={job} />}
       {toast && (
-        <div role="status" aria-live="polite" className={`fixed left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-sm text-white shadow-lift ${job ? "bottom-28" : "bottom-5"}`}>
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-sm text-white shadow-lift ${job ? "bottom-28" : "bottom-5"}`}
+        >
           {toast}
         </div>
       )}
@@ -501,7 +514,12 @@ function ComposeSprint({
 }: {
   busy: boolean;
   onClose: () => void;
-  onCreate: (payload: { title: string; course_code: string; duration_weeks: number; syllabus: string }) => Promise<void>;
+  onCreate: (payload: {
+    title: string;
+    course_code: string;
+    duration_weeks: number;
+    syllabus: string;
+  }) => Promise<void>;
 }) {
   const [title, setTitle] = useState("Computer Networks");
   const [courseCode, setCourseCode] = useState("CS303");
@@ -520,7 +538,9 @@ function ComposeSprint({
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-lg font-semibold">Syllabus to sprint</h2>
-            <p className="text-sm text-slate-500">Units become epics. Advanced topics stay locked until the foundation is mastered.</p>
+            <p className="text-sm text-slate-500">
+              Units become epics. Advanced topics stay locked until the foundation is mastered.
+            </p>
           </div>
           <button type="button" onClick={onClose} className="rounded-lg border border-line p-1.5" aria-label="Close">
             ×
@@ -537,18 +557,36 @@ function ComposeSprint({
           </label>
           <label className="text-xs text-slate-500">
             Weeks
-            <input className="field mt-1" type="number" min={1} max={18} value={weeks} onChange={(event) => setWeeks(Number(event.target.value))} />
+            <input
+              className="field mt-1"
+              type="number"
+              min={1}
+              max={18}
+              value={weeks}
+              onChange={(event) => setWeeks(Number(event.target.value))}
+            />
           </label>
         </div>
         <label className="mt-3 block text-xs text-slate-500">
           Syllabus or lab brief
-          <textarea className="field mt-1 min-h-40 text-sm" value={syllabus} onChange={(event) => setSyllabus(event.target.value)} />
+          <textarea
+            className="field mt-1 min-h-40 text-sm"
+            value={syllabus}
+            onChange={(event) => setSyllabus(event.target.value)}
+          />
         </label>
         <div className="mt-4 flex justify-end gap-2">
-          <button type="button" onClick={() => setSyllabus(SAMPLE_SYLLABUS)} className="rounded-full border border-line px-4 py-2 text-sm">
+          <button
+            type="button"
+            onClick={() => setSyllabus(SAMPLE_SYLLABUS)}
+            className="rounded-full border border-line px-4 py-2 text-sm"
+          >
             Sample syllabus
           </button>
-          <button disabled={busy} className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+          <button
+            disabled={busy}
+            className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          >
             Build Kanban
           </button>
         </div>

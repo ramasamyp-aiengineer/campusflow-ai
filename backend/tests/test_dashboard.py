@@ -18,13 +18,19 @@ def test_next_actions_suggest_a_first_topic_when_none_exist():
 
 
 def test_next_actions_prefer_unread_reading_over_a_first_topic():
-    kinds = [action["kind"] for action in next_actions(ActionInputs(unread_stories=1, interest_count=2, has_placement_sprint=True))]
+    kinds = [
+        action["kind"]
+        for action in next_actions(ActionInputs(unread_stories=1, interest_count=2, has_placement_sprint=True))
+    ]
     assert "read" in kinds
     assert "follow" not in kinds
 
 
 def test_next_actions_skip_strong_skills_and_cap_the_list():
-    assert all(action["kind"] != "skill" for action in next_actions(ActionInputs(weakest_skill="SQL", weakest_score=80, has_placement_sprint=True)))
+    assert all(
+        action["kind"] != "skill"
+        for action in next_actions(ActionInputs(weakest_skill="SQL", weakest_score=80, has_placement_sprint=True))
+    )
     crowded = ActionInputs(
         blocked_code="A-1",
         in_review=1,

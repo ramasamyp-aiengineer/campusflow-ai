@@ -23,6 +23,8 @@ def reset_request_user(token: Token) -> None:
 
 def request_user_id() -> int | None:
     return _request_user_id.get()
+
+
 SCRYPT_N, SCRYPT_R, SCRYPT_P = 2**14, 8, 1
 DEMO_EMAILS = {
     "STU_8921": "arjun@campusflow.edu",

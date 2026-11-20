@@ -19,13 +19,7 @@ export function Ring({
   const circ = 2 * Math.PI * radius;
   const center = size / 2;
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      role="img"
-      aria-label={`${label}: ${safe} percent`}
-    >
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${label}: ${safe} percent`}>
       <circle cx={center} cy={center} r={radius} stroke={track} strokeWidth={stroke} fill="none" />
       <circle
         cx={center}

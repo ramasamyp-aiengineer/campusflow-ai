@@ -9,9 +9,21 @@ import { setToken } from "@/lib/session";
 import type { LoginResult, SessionUser } from "@/lib/types";
 
 const PROMISES = [
-  { icon: KanbanSquare, title: "Your semester as a sprint board", detail: "Course outcomes become tickets you can move and prove." },
-  { icon: GraduationCap, title: "Skills backed by evidence", detail: "A score is recorded when faculty co-sign an AI-reviewed ticket." },
-  { icon: Radar, title: "Early signals for mentors", detail: "Faculty and the placement cell see risk before exams do." },
+  {
+    icon: KanbanSquare,
+    title: "Your semester as a sprint board",
+    detail: "Course outcomes become tickets you can move and prove.",
+  },
+  {
+    icon: GraduationCap,
+    title: "Skills backed by evidence",
+    detail: "A score is recorded when faculty co-sign an AI-reviewed ticket.",
+  },
+  {
+    icon: Radar,
+    title: "Early signals for mentors",
+    detail: "Faculty and the placement cell see risk before exams do.",
+  },
 ];
 
 export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: (user: SessionUser) => void }) {
@@ -81,7 +93,9 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
         <div className="pointer-events-none absolute -bottom-32 left-10 h-72 w-72 rounded-full bg-copper/25 blur-3xl" />
         <Logo light />
         <div className="relative mt-auto max-w-md">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#F4E6CF]">CampusFlow University · School of Computing</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#F4E6CF]">
+            CampusFlow University · School of Computing
+          </p>
           <h1 className="display mt-3 text-[2.6rem] leading-[1.08]">Run your semester like a product team.</h1>
           <ul className="mt-8 space-y-5">
             {PROMISES.map((item) => {
@@ -112,7 +126,8 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
           </div>
           <h2 className="display mt-8 text-[2rem] leading-tight text-ink lg:mt-0">Sign in</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Use your campus account. Seeded Student, Faculty, and Placement workspaces stay on the buttons below for a walkthrough.
+            Use your campus account. Seeded Student, Faculty, and Placement workspaces stay on the buttons below for a
+            walkthrough.
           </p>
 
           {notice && <p className="mt-5 rounded-2xl bg-[#F4E6CF] px-4 py-2.5 text-sm text-[#8A4A1C]">{notice}</p>}
@@ -128,7 +143,14 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
             {creating && (
               <label htmlFor="login-name" className="block text-xs font-medium text-slate-600">
                 Name
-                <input id="login-name" className="field mt-1" value={name} onChange={(event) => setName(event.target.value)} required minLength={2} />
+                <input
+                  id="login-name"
+                  className="field mt-1"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  required
+                  minLength={2}
+                />
               </label>
             )}
             <label htmlFor="login-email" className="block text-xs font-medium text-slate-600">
@@ -195,7 +217,9 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
             <div className="mt-8">
               <div className="flex items-center gap-3">
                 <span className="h-px flex-1 bg-line" />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Demo accounts</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  Demo accounts
+                </span>
                 <span className="h-px flex-1 bg-line" />
               </div>
               <div className="mt-3 space-y-2">
@@ -215,7 +239,9 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
                     }}
                     className="group flex w-full items-center gap-3 rounded-2xl border border-line bg-white px-3 py-2.5 text-left transition hover:-translate-y-0.5 hover:shadow-card disabled:opacity-60"
                   >
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-[11px] font-semibold text-white">{account.initials}</span>
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-[11px] font-semibold text-white">
+                      {account.initials}
+                    </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-semibold text-ink">{account.name}</span>
                       <span className="block truncate text-[11px] text-slate-500">
@@ -226,7 +252,13 @@ export function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: 
                   </button>
                 ))}
               </div>
-              {DEMO_PASSWORD ? <p className="mono mt-2 text-center text-[11px] text-slate-400">Demo password: {DEMO_PASSWORD}</p> : <p className="mt-2 text-center text-[11px] text-slate-400">One-click demo sign-in (password stays on the server)</p>}
+              {DEMO_PASSWORD ? (
+                <p className="mono mt-2 text-center text-[11px] text-slate-400">Demo password: {DEMO_PASSWORD}</p>
+              ) : (
+                <p className="mt-2 text-center text-[11px] text-slate-400">
+                  One-click demo sign-in (password stays on the server)
+                </p>
+              )}
             </div>
           )}
         </div>

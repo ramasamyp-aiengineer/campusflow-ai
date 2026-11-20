@@ -48,7 +48,10 @@ def test_drift_radar_is_populated_on_a_cold_start(cold_db: Session):
     radar = curriculum_drift(cold_db)
     assert {trend["in_syllabus"] for trend in radar["trends"]} == {True, False}
     assert all(trend["suggestion"] for trend in radar["trends"])
-    assert any(alert["level"] == "critical" and alert["title"] == "Hiring news is turning critical" for alert in radar["alerts"])
+    assert any(
+        alert["level"] == "critical" and alert["title"] == "Hiring news is turning critical"
+        for alert in radar["alerts"]
+    )
     rendered = json.dumps(radar)
     assert not any(name in rendered for name in STUDENT_NAMES)
 
@@ -95,17 +98,32 @@ def test_every_ai_feature_answers_while_gemini_returns_503(client: TestClient, g
     sprint = client.post(
         "/api/v1/sprints/generate",
         headers=STUDENT,
-        json={"title": "Resilience drill", "course_code": "CS399", "duration_weeks": 2, "syllabus": "Unit 1: Indexes and B+ trees. Unit 2: Transactions and locking."},
+        json={
+            "title": "Resilience drill",
+            "course_code": "CS399",
+            "duration_weeks": 2,
+            "syllabus": "Unit 1: Indexes and B+ trees. Unit 2: Transactions and locking.",
+        },
     )
     assert sprint.status_code == 200 and sprint.json()["items"]
 
     joins = _ticket("CS301-104")
-    unblock = client.post(f"/api/v1/lwi/{joins}/unblock", headers=STUDENT, json={"message": "I am stuck on outer joins. Mail me at arjun.k@college.edu"})
+    unblock = client.post(
+        f"/api/v1/lwi/{joins}/unblock",
+        headers=STUDENT,
+        json={"message": "I am stuck on outer joins. Mail me at arjun.k@college.edu"},
+    )
     assert unblock.status_code == 200 and unblock.json()["result"]["guiding_question"]
-    review = client.post(f"/api/v1/lwi/{joins}/evaluate", headers=STUDENT, json={"submission": "A left join keeps unmatched rows from the left table and fills NULLs."})
+    review = client.post(
+        f"/api/v1/lwi/{joins}/evaluate",
+        headers=STUDENT,
+        json={"submission": "A left join keeps unmatched rows from the left table and fills NULLs."},
+    )
     assert review.status_code == 200
 
-    brief, source = article_brief("Query planners explain joins", "A release improved index choice. Students learn SQL faster.", "Databases")
+    brief, source = article_brief(
+        "Query planners explain joins", "A release improved index choice. Students learn SQL faster.", "Databases"
+    )
     assert source == "local" and brief.startswith("For Databases:")
 
     story = _story(client, "Query planners")
@@ -137,7 +155,9 @@ def test_recovered_gemini_never_changes_a_quiz_in_progress_or_passed(client: Tes
     body = {"candidates": [{"content": {"parts": [{"text": json.dumps(recovered)}]}}]}
     _fake_gemini(monkeypatch, 200, body, [])
 
-    graded = client.post(f"/api/v1/signals/messages/{story['id']}/quiz", headers=STUDENT, json={"choice": answer}).json()
+    graded = client.post(
+        f"/api/v1/signals/messages/{story['id']}/quiz", headers=STUDENT, json={"choice": answer}
+    ).json()
     assert graded["correct"] is True
 
     reopened = client.post(f"/api/v1/signals/messages/{story['id']}/explain", headers=STUDENT).json()

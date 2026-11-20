@@ -32,7 +32,10 @@ def test_mastering_a_ticket_updates_the_skill_graph(client: TestClient):
     graph_url = f"/api/v1/students/{actor['actor']['id']}/skill-graph"
 
     def node_for(skill: str):
-        return next((node for node in client.get(graph_url, headers=STUDENT).json()["skills"] if node["skill_name"] == skill), None)
+        return next(
+            (node for node in client.get(graph_url, headers=STUDENT).json()["skills"] if node["skill_name"] == skill),
+            None,
+        )
 
     before = node_for(ready["skill_tag"])
     denied = client.patch(f"/api/v1/lwi/{ready['id']}/status", headers=STUDENT, json={"status": "MASTERED"})
@@ -60,13 +63,16 @@ def test_a_failing_gemini_model_rests_and_the_fallback_goes_first(monkeypatch):
 def test_production_settings_hide_api_docs():
     from app.config import Settings
 
-    assert Settings(
-        environment="production",
-        gemini_api_key="",
-        app_secret="production-test-secret-that-is-long-enough",
-        demo_password="non-default-test-password",
-        allow_persona_header=False,
-    ).is_production is True
+    assert (
+        Settings(
+            environment="production",
+            gemini_api_key="",
+            app_secret="production-test-secret-that-is-long-enough",
+            demo_password="non-default-test-password",
+            allow_persona_header=False,
+        ).is_production
+        is True
+    )
     assert Settings(environment="development", gemini_api_key="").is_production is False
 
 

@@ -38,15 +38,21 @@ export function FacultyView({ cohort, persona }: { cohort: CohortHealth | null; 
       setQueueError(reason instanceof Error ? reason.message : "Could not co-sign that ticket");
     }
   }
-  if (!cohort) return <div className="grid h-full place-items-center text-sm text-slate-500">Loading cohort health…</div>;
+  if (!cohort)
+    return <div className="grid h-full place-items-center text-sm text-slate-500">Loading cohort health…</div>;
   return (
     <div className="h-full overflow-auto px-5 py-5">
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Faculty command</p>
       <h1 className="text-xl font-semibold tracking-tight">Early-warning radar</h1>
-      <p className="mb-4 text-sm text-slate-500">A student is at risk when sprint velocity drops more than 35% or more than two core tickets are blocked. Mastery is recorded when you co-sign an AI-reviewed ticket.</p>
+      <p className="mb-4 text-sm text-slate-500">
+        A student is at risk when sprint velocity drops more than 35% or more than two core tickets are blocked. Mastery
+        is recorded when you co-sign an AI-reviewed ticket.
+      </p>
       <section className="surface mb-4 p-4">
         <h2 className="text-sm font-semibold">Awaiting co-sign</h2>
-        <p className="mt-1 text-xs text-slate-500">These drafts cleared the AI review bar of 75. Co-sign writes the skill graph.</p>
+        <p className="mt-1 text-xs text-slate-500">
+          These drafts cleared the AI review bar of 75. Co-sign writes the skill graph.
+        </p>
         {queueError && <p className="mt-2 text-sm text-rose-700">{queueError}</p>}
         {queue.length === 0 ? (
           <p className="mt-3 text-sm text-slate-500">Nothing is waiting.</p>
@@ -81,7 +87,9 @@ export function FacultyView({ cohort, persona }: { cohort: CohortHealth | null; 
           <SentimentDonut
             counts={sentimentCounts(
               pulse.clusters.flatMap((cluster) =>
-                Object.entries(cluster.sentiments).flatMap(([sentiment, count]) => Array.from({ length: count }, () => ({ sentiment }))),
+                Object.entries(cluster.sentiments).flatMap(([sentiment, count]) =>
+                  Array.from({ length: count }, () => ({ sentiment })),
+                ),
               ),
             )}
             caption="Cohort sentiment, names withheld"
@@ -118,7 +126,9 @@ export function FacultyView({ cohort, persona }: { cohort: CohortHealth | null; 
               <tr key={student.id} className={`border-t border-line ${student.at_risk ? "bg-rose-50/70" : ""}`}>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="grid h-8 w-8 place-items-center rounded-full bg-ink text-[11px] font-semibold text-white">{student.avatar_initials}</span>
+                    <span className="grid h-8 w-8 place-items-center rounded-full bg-ink text-[11px] font-semibold text-white">
+                      {student.avatar_initials}
+                    </span>
                     <div>
                       <p className="font-medium">{student.name}</p>
                       <p className="mono text-[11px] text-slate-400">{student.anon_token}</p>
@@ -129,7 +139,13 @@ export function FacultyView({ cohort, persona }: { cohort: CohortHealth | null; 
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <div className="h-1.5 w-24 overflow-hidden rounded-full bg-white">
-                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, student.velocity_drop_pct)}%`, background: student.velocity_drop_pct > 35 ? "#E11D48" : "#4F46E5" }} />
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.min(100, student.velocity_drop_pct)}%`,
+                          background: student.velocity_drop_pct > 35 ? "#E11D48" : "#4F46E5",
+                        }}
+                      />
                     </div>
                     <span className="mono text-xs">{student.velocity_drop_pct.toFixed(0)}%</span>
                   </div>
@@ -140,7 +156,9 @@ export function FacultyView({ cohort, persona }: { cohort: CohortHealth | null; 
                   {student.at_risk ? (
                     <span className="font-medium text-rose-700">{student.risk_reasons.join(" · ")}</span>
                   ) : (
-                    <span className="text-emerald-700">On pace{student.top_gap ? ` · gap: ${student.top_gap}` : ""}</span>
+                    <span className="text-emerald-700">
+                      On pace{student.top_gap ? ` · gap: ${student.top_gap}` : ""}
+                    </span>
                   )}
                 </td>
               </tr>

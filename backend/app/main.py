@@ -107,7 +107,9 @@ async def security_headers(request: Request, call_next):
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(_request: Request, exc: RateLimitExceeded):
-    return JSONResponse(status_code=429, content={"detail": "Rate limit reached. Wait a minute and try the AI action again."})
+    return JSONResponse(
+        status_code=429, content={"detail": "Rate limit reached. Wait a minute and try the AI action again."}
+    )
 
 
 def _database_ok() -> bool:

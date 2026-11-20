@@ -38,7 +38,18 @@ SKILL_HINTS: dict[str, tuple[str, ...]] = {
     "System Design": ("system design", "scalability", "latency", "architecture"),
     "DevOps": ("devops", "kubernetes", "docker", "deployment"),
     "Security Engineering": (
-        "cybersecurity", "cyber", "breach", "leak", "vulnerability", "exploit", "cve", "ransomware", "phishing", "malware", "encryption", "authentication",
+        "cybersecurity",
+        "cyber",
+        "breach",
+        "leak",
+        "vulnerability",
+        "exploit",
+        "cve",
+        "ransomware",
+        "phishing",
+        "malware",
+        "encryption",
+        "authentication",
     ),
     "Relational Algebra": ("normalization", "relational"),
     "Frontend Engineering": ("react", "frontend"),
@@ -65,7 +76,9 @@ def skills_in(text: str) -> list[str]:
 
 
 def _salient(title: str) -> set[str]:
-    return {word.strip(".") for word in WORD.findall(title.lower()) if len(word) >= 4 and word.strip(".") not in STOPWORDS}
+    return {
+        word.strip(".") for word in WORD.findall(title.lower()) if len(word) >= 4 and word.strip(".") not in STOPWORDS
+    }
 
 
 class BadgeContext:
@@ -76,15 +89,15 @@ class BadgeContext:
             .all()
         )
         self.items_by_id = {
-            item.id: item
-            for item in db.query(LearningWorkItem).filter(LearningWorkItem.student_id == student.id).all()
+            item.id: item for item in db.query(LearningWorkItem).filter(LearningWorkItem.student_id == student.id).all()
         }
         self.scores = {
             node.skill_name: node.proficiency_score
             for node in db.query(SkillNode).filter(SkillNode.student_id == student.id).all()
         }
         placement_ids = {
-            sprint.id for sprint in db.query(Sprint).filter(Sprint.owner_student_id == student.id, Sprint.kind == "PLACEMENT")
+            sprint.id
+            for sprint in db.query(Sprint).filter(Sprint.owner_student_id == student.id, Sprint.kind == "PLACEMENT")
         }
         self.placement_items = [item for item in self.open_items if item.sprint_id in placement_ids]
 
@@ -108,12 +121,22 @@ def story_badges(message: SignalMessage, context: BadgeContext) -> list[dict[str
         if score > best_score:
             best, best_score = item, score
     if best is not None and best_score >= 2:
-        badges.append({"kind": "ticket", "label": f"Matches your active ticket {best.ticket_code}", "detail": best.title})
+        badges.append(
+            {"kind": "ticket", "label": f"Matches your active ticket {best.ticket_code}", "detail": best.title}
+        )
 
-    gaps = sorted((context.scores[skill], skill) for skill in skills if skill in context.scores and context.scores[skill] < 70)
+    gaps = sorted(
+        (context.scores[skill], skill) for skill in skills if skill in context.scores and context.scores[skill] < 70
+    )
     if gaps:
         score, skill = gaps[0]
-        badges.append({"kind": "gap", "label": f"Closes a skill gap: {skill} ({score})", "detail": f"{skill} is below the verified bar of 70."})
+        badges.append(
+            {
+                "kind": "gap",
+                "label": f"Closes a skill gap: {skill} ({score})",
+                "detail": f"{skill} is below the verified bar of 70.",
+            }
+        )
 
     if context.placement_items:
         for skill in skills:
@@ -121,15 +144,27 @@ def story_badges(message: SignalMessage, context: BadgeContext) -> list[dict[str
             if share:
                 percent = round(100 * share / len(context.placement_items))
                 badges.append(
-                    {"kind": "placement", "label": f"Placement prep: {skill} is {percent}% of your sprint", "detail": "Your job-description prep sprint includes this skill."}
+                    {
+                        "kind": "placement",
+                        "label": f"Placement prep: {skill} is {percent}% of your sprint",
+                        "detail": "Your job-description prep sprint includes this skill.",
+                    }
                 )
                 break
 
     if not any(badge["kind"] in {"gap", "ticket"} for badge in badges):
-        strong = sorted(((context.scores[skill], skill) for skill in skills if context.scores.get(skill, 0) >= 70), reverse=True)
+        strong = sorted(
+            ((context.scores[skill], skill) for skill in skills if context.scores.get(skill, 0) >= 70), reverse=True
+        )
         if strong:
             score, skill = strong[0]
-            badges.append({"kind": "skill", "label": f"Builds on verified {skill} ({score})", "detail": "You already have evidence for this skill."})
+            badges.append(
+                {
+                    "kind": "skill",
+                    "label": f"Builds on verified {skill} ({score})",
+                    "detail": "You already have evidence for this skill.",
+                }
+            )
     return badges[:3]
 
 
@@ -316,7 +351,9 @@ def fallback_explainer(message: SignalMessage) -> Explainer:
     return Explainer(
         concept=(sentences[0] if sentences else plain(message.title))[:400],
         use_case=(
-            sentences[1] if len(sentences) > 1 else f"You would meet this when you work on {skills[0] if skills else correct} in a real project."
+            sentences[1]
+            if len(sentences) > 1
+            else f"You would meet this when you work on {skills[0] if skills else correct} in a real project."
         )[:400],
         question="Which area is this story mainly about?",
         options=options,
@@ -376,11 +413,7 @@ def quiz_skills(db: Session, message: SignalMessage) -> list[str]:
 
 def quiz_skill(db: Session, student: User, names: list[str]) -> SkillNode | None:
     for name in names:
-        node = (
-            db.query(SkillNode)
-            .filter(SkillNode.student_id == student.id, SkillNode.skill_name == name)
-            .first()
-        )
+        node = db.query(SkillNode).filter(SkillNode.student_id == student.id, SkillNode.skill_name == name).first()
         if node is not None:
             return node
     return None
@@ -401,8 +434,14 @@ def answer_quiz(db: Session, student: User, message: SignalMessage, choice: int)
                 raise QuizLocked(remaining)
     card, _ = cached_explainer(message) or build_explainer(message)
     correct = choice == card.answer_index
-    result = {"correct": correct, "why": card.why if correct else "Not quite. Re-read the core concept and try again.",
-              "xp_awarded": 0, "skill": None, "skill_score": None, "already_passed": message.quiz_passed}
+    result = {
+        "correct": correct,
+        "why": card.why if correct else "Not quite. Re-read the core concept and try again.",
+        "xp_awarded": 0,
+        "skill": None,
+        "skill_score": None,
+        "already_passed": message.quiz_passed,
+    }
     if not correct:
         message.quiz_lock_until = (now + timedelta(seconds=QUIZ_LOCK_SECONDS)).isoformat()
         return result
@@ -453,9 +492,7 @@ def _mentions_any(hints: tuple[str, ...], blob: str, tokens: set[str]) -> bool:
 def curriculum_text(db: Session) -> str:
     parts = [sprint.title for sprint in db.query(Sprint).filter(Sprint.kind == "COURSE")]
     for item in (
-        db.query(LearningWorkItem)
-        .join(Sprint, Sprint.id == LearningWorkItem.sprint_id)
-        .filter(Sprint.kind == "COURSE")
+        db.query(LearningWorkItem).join(Sprint, Sprint.id == LearningWorkItem.sprint_id).filter(Sprint.kind == "COURSE")
     ):
         parts.extend([item.title, item.description or "", item.skill_tag])
     return " ".join(parts).lower()
@@ -481,7 +518,15 @@ def curriculum_drift(db: Session) -> dict:
             suggestion = f"Not in the syllabus yet. Consider a {term} workshop."
         else:
             suggestion = "Not in the syllabus. Keep watching."
-        trends.append({"term": term, "stories": count, "share": round(100 * share), "in_syllabus": covered, "suggestion": suggestion})
+        trends.append(
+            {
+                "term": term,
+                "stories": count,
+                "share": round(100 * share),
+                "in_syllabus": covered,
+                "suggestion": suggestion,
+            }
+        )
     trends.sort(key=lambda trend: (-trend["stories"], trend["term"]))
 
     subtopics: dict[str, dict[str, int]] = {}
@@ -518,7 +563,11 @@ def curriculum_drift(db: Session) -> dict:
     for label, bucket in subtopics.items():
         if label != "Placement market" and bucket["count"] >= 2 and bucket["critical"] / bucket["count"] >= 0.5:
             alerts.append(
-                {"level": "critical", "title": f"{label} stories are mostly critical", "detail": f"{bucket['critical']} of {bucket['count']} stories read critical."}
+                {
+                    "level": "critical",
+                    "title": f"{label} stories are mostly critical",
+                    "detail": f"{bucket['critical']} of {bucket['count']} stories read critical.",
+                }
             )
 
     return {

@@ -42,7 +42,9 @@ export function Sidebar({
 }) {
   return (
     <>
-      {open && <button className="fixed inset-0 z-20 bg-[#241C16]/45 md:hidden" onClick={onClose} aria-label="Close menu" />}
+      {open && (
+        <button className="fixed inset-0 z-20 bg-[#241C16]/45 md:hidden" onClick={onClose} aria-label="Close menu" />
+      )}
       <aside
         className={`fixed inset-y-0 left-0 z-30 flex w-[272px] flex-col bg-ink text-[#F6E7D4] transition-transform md:static md:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
@@ -50,7 +52,9 @@ export function Sidebar({
       >
         <div className="px-4 pb-4 pt-5">
           <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-2xl bg-[#F4E6CF] text-sm font-semibold text-ink">CF</div>
+            <div className="grid h-9 w-9 place-items-center rounded-2xl bg-[#F4E6CF] text-sm font-semibold text-ink">
+              CF
+            </div>
             <div>
               <p className="display text-[1.15rem] leading-none text-[#FFF8EF]">CampusFlow</p>
               <p className="mt-1 text-[11px] tracking-wide text-[#D7B89A]">Agile campus OS</p>
@@ -73,15 +77,21 @@ export function Sidebar({
                   active ? "bg-[#F4E6CF] text-ink shadow-card" : "text-[#E7D3C0] hover:bg-white/8"
                 }`}
               >
-                <span className={`grid h-8 w-8 place-items-center rounded-xl ${active ? "bg-ink text-[#F4E6CF]" : "bg-white/8 text-[#F0C9A0]"}`}>
+                <span
+                  className={`grid h-8 w-8 place-items-center rounded-xl ${active ? "bg-ink text-[#F4E6CF]" : "bg-white/8 text-[#F0C9A0]"}`}
+                >
                   <Icon size={15} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold leading-4">{item.label}</span>
-                  <span className={`block text-[11px] ${active ? "text-[#8A6244]" : "text-[#CDB39A]"}`}>{item.hint}</span>
+                  <span className={`block text-[11px] ${active ? "text-[#8A6244]" : "text-[#CDB39A]"}`}>
+                    {item.hint}
+                  </span>
                 </span>
                 {item.id === "signals" && unread > 0 && (
-                  <span className={`mono rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${active ? "bg-copper text-white" : "bg-[#C46B2C] text-white"}`}>
+                  <span
+                    className={`mono rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${active ? "bg-copper text-white" : "bg-[#C46B2C] text-white"}`}
+                  >
                     {unread}
                   </span>
                 )}
@@ -114,7 +124,10 @@ export function Sidebar({
                     </div>
                     <p className="truncate text-xs">{sprint.title}</p>
                     <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/10">
-                      <div className="h-full rounded-full bg-[#E7B15A]" style={{ width: `${sprint.progress_percent}%` }} />
+                      <div
+                        className="h-full rounded-full bg-[#E7B15A]"
+                        style={{ width: `${sprint.progress_percent}%` }}
+                      />
                     </div>
                   </button>
                 );

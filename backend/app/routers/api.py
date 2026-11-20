@@ -123,7 +123,9 @@ def _trace(*labels: str) -> list[ReasoningStep]:
 
 def _reject_capacity(exc: SprintCapacityError) -> HTTPException:
     if exc.kind == "sprints":
-        return HTTPException(status_code=409, detail=f"You can own {exc.limit} sprints. Finish one before opening another.")
+        return HTTPException(
+            status_code=409, detail=f"You can own {exc.limit} sprints. Finish one before opening another."
+        )
     return HTTPException(status_code=409, detail=f"This sprint is capped at {exc.limit} tickets.")
 
 
@@ -178,7 +180,6 @@ def student_user(
 ) -> User:
     """Signed-in student when Bearer is present; seeded persona user in header tests."""
     return actor_for_persona(db, persona, authorization=authorization)
-
 
 
 def current_actor(
@@ -427,7 +428,9 @@ async def generate_sprint(
     except SprintCapacityError as exc:
         raise _reject_capacity(exc) from exc
     try:
-        plan, guarded = await asyncio.to_thread(plan_sprint, body.title, body.course_code, body.syllabus, body.duration_weeks)
+        plan, guarded = await asyncio.to_thread(
+            plan_sprint, body.title, body.course_code, body.syllabus, body.duration_weeks
+        )
     except Exception:
         logger.exception("Sprint planning fell back to the deterministic engine")
         from app.services.ai import fallback_sprint
@@ -530,7 +533,9 @@ async def evaluate(
     except json.JSONDecodeError:
         rubric = []
     try:
-        result, guarded = await asyncio.to_thread(plan_evaluation, body.submission, rubric, item.skill_tag, item.ticket_code)
+        result, guarded = await asyncio.to_thread(
+            plan_evaluation, body.submission, rubric, item.skill_tag, item.ticket_code
+        )
     except Exception:
         logger.exception("Evaluation fell back to the deterministic engine")
         from app.services.ai import fallback_evaluation
@@ -550,7 +555,11 @@ async def evaluate(
         score = result.readiness_score or 0
         items = lwis_for(db, student.id)
         by_id = index_items(items)
-        if score >= PASS_SCORE and item.status in {"BACKLOG", "IN_PROGRESS"} and not assert_can_enter(item, "AI_REVIEW", by_id):
+        if (
+            score >= PASS_SCORE
+            and item.status in {"BACKLOG", "IN_PROGRESS"}
+            and not assert_can_enter(item, "AI_REVIEW", by_id)
+        ):
             item.status = "AI_REVIEW"
     audit(
         db,
@@ -645,16 +654,10 @@ def skill_graph(
 @router.get("/faculty/review-queue", response_model=list[ReviewTicket])
 def review_queue(persona: str = Depends(require("faculty")), db: Session = Depends(get_db)) -> list[ReviewTicket]:
     items = (
-        db.query(LearningWorkItem)
-        .filter(LearningWorkItem.status == "AI_REVIEW")
-        .order_by(LearningWorkItem.id)
-        .all()
+        db.query(LearningWorkItem).filter(LearningWorkItem.status == "AI_REVIEW").order_by(LearningWorkItem.id).all()
     )
     student_ids = {item.student_id for item in items}
-    users = {
-        user.id: user
-        for user in (db.query(User).filter(User.id.in_(student_ids)).all() if student_ids else [])
-    }
+    users = {user.id: user for user in (db.query(User).filter(User.id.in_(student_ids)).all() if student_ids else [])}
     return [
         ReviewTicket(
             id=item.id,
@@ -747,7 +750,9 @@ def security_preview(
 ) -> PreviewOut:
     guarded = guard_untrusted(body.text)
     actor = actor_for_persona(db, persona, authorization=authorization)
-    audit(db, actor, "security.preview", f"redactions={guarded.meta.redactions} flags={len(guarded.meta.injection_flags)}")
+    audit(
+        db, actor, "security.preview", f"redactions={guarded.meta.redactions} flags={len(guarded.meta.injection_flags)}"
+    )
     db.commit()
     return PreviewOut(
         redacted_text=guarded.redacted,
@@ -771,14 +776,35 @@ def posture(persona: str = Depends(current_persona), db: Session = Depends(get_d
     return PostureOut(
         ai_mode=get_settings().ai_mode,
         controls=[
-            {"name": "Structured output", "detail": "Gemini JSON is validated with Pydantic. A failed parse retries once, then a deterministic plan is returned."},
-            {"name": "Socratic guardrail", "detail": "Direct-solution requests never receive finished code. A 15-minute remediation ticket is filed instead."},
-            {"name": "Prompt boundary", "detail": "Syllabi, submissions, and job descriptions are neutralized and wrapped in student_submission tags."},
-            {"name": "PII redaction", "detail": "Emails, phone numbers, and roll numbers are replaced with tokens before any model call. Raw values are not logged."},
-            {"name": "Sign-in", "detail": "Every route needs a session token. Passwords are salted scrypt hashes, tokens are stored hashed, sign-out revokes them, and login is limited to 20 tries a minute."},
-            {"name": "RBAC", "detail": "The role comes from the signed-in account, not the browser. Students cannot open faculty views or another student's skill graph."},
+            {
+                "name": "Structured output",
+                "detail": "Gemini JSON is validated with Pydantic. A failed parse retries once, then a deterministic plan is returned.",
+            },
+            {
+                "name": "Socratic guardrail",
+                "detail": "Direct-solution requests never receive finished code. A 15-minute remediation ticket is filed instead.",
+            },
+            {
+                "name": "Prompt boundary",
+                "detail": "Syllabi, submissions, and job descriptions are neutralized and wrapped in student_submission tags.",
+            },
+            {
+                "name": "PII redaction",
+                "detail": "Emails, phone numbers, and roll numbers are replaced with tokens before any model call. Raw values are not logged.",
+            },
+            {
+                "name": "Sign-in",
+                "detail": "Every route needs a session token. Passwords are salted scrypt hashes, tokens are stored hashed, sign-out revokes them, and login is limited to 20 tries a minute.",
+            },
+            {
+                "name": "RBAC",
+                "detail": "The role comes from the signed-in account, not the browser. Students cannot open faculty views or another student's skill graph.",
+            },
             {"name": "Rate limit", "detail": "AI generation routes are limited to 10 requests per minute per IP."},
-            {"name": "Secrets", "detail": "The Gemini key is read from the environment. .env.example is the only env file in source control."},
+            {
+                "name": "Secrets",
+                "detail": "The Gemini key is read from the environment. .env.example is the only env file in source control.",
+            },
         ],
         recent_audit=[
             AuditOut(action=event.action, detail=event.detail, actor_role=event.actor_role, created_at=event.created_at)

@@ -67,9 +67,7 @@ class LearningWorkItem(Base):
     status: Mapped[str] = mapped_column(String(20), default="BACKLOG", index=True)
     story_points: Mapped[int] = mapped_column(Integer, default=3)
     skill_tag: Mapped[str] = mapped_column(String(80))
-    prerequisite_id: Mapped[int | None] = mapped_column(
-        ForeignKey("learning_work_items.id"), nullable=True
-    )
+    prerequisite_id: Mapped[int | None] = mapped_column(ForeignKey("learning_work_items.id"), nullable=True)
     co_tag: Mapped[str] = mapped_column(String(20), default="CO1")
     rubric_criteria: Mapped[str] = mapped_column(Text, default="[]")
     ai_feedback_json: Mapped[str | None] = mapped_column(Text, nullable=True)

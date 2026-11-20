@@ -6,10 +6,10 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const components = join(root, "components");
 const required = [
   ["KanbanBoard.tsx", ["Move to", "onKeyDown", "htmlFor", "ArrowRight"]],
-  ["LoginView.tsx", ["htmlFor=\"login-email\"", "htmlFor=\"login-password\"", "role=\"alert\""]],
-  ["SentimentCharts.tsx", ["role=\"img\"", "aria-label", "role=\"meter\""]],
-  ["TopBar.tsx", ["aria-label=\"Filter tickets", "aria-label=\"Sign out\""]],
-  ["SignalsView.tsx", ["htmlFor=\"interest-topic\"", "role=\"tablist\""]],
+  ["LoginView.tsx", ['htmlFor="login-email"', 'htmlFor="login-password"', 'role="alert"']],
+  ["SentimentCharts.tsx", ['role="img"', "aria-label", 'role="meter"']],
+  ["TopBar.tsx", ['aria-label="Filter tickets', 'aria-label="Sign out"']],
+  ["SignalsView.tsx", ['htmlFor="interest-topic"', 'role="tablist"']],
 ];
 
 const globals = readFileSync(join(root, "app", "globals.css"), "utf8");

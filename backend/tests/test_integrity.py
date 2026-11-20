@@ -20,9 +20,17 @@ def test_drag_to_ai_review_or_mastery_needs_a_scored_submission(client: TestClie
     created = client.post(
         f"/api/v1/sprints/{sprint_id}/tickets",
         headers=STUDENT,
-        json={"title": "Fake mastery attempt", "description": "Should not raise the skill graph.", "skill_tag": "SQL", "story_points": 2},
+        json={
+            "title": "Fake mastery attempt",
+            "description": "Should not raise the skill graph.",
+            "skill_tag": "SQL",
+            "story_points": 2,
+        },
     ).json()
-    assert client.patch(f"/api/v1/lwi/{created['id']}/status", headers=STUDENT, json={"status": "IN_PROGRESS"}).status_code == 200
+    assert (
+        client.patch(f"/api/v1/lwi/{created['id']}/status", headers=STUDENT, json={"status": "IN_PROGRESS"}).status_code
+        == 200
+    )
     for status in ("AI_REVIEW", "MASTERED"):
         response = client.patch(f"/api/v1/lwi/{created['id']}/status", headers=STUDENT, json={"status": status})
         assert response.status_code == 409
@@ -60,14 +68,19 @@ def test_mastery_records_the_ticket_and_repeat_boosts_are_idempotent(client: Tes
     assert review.status_code == 200
     assert review.json()["result"]["readiness_score"] >= 75
     assert review.json()["lwi"]["status"] == "AI_REVIEW"
-    after_eval = next(node for node in client.get(graph, headers=STUDENT).json()["skills"] if node["skill_name"] == "SQL")
+    after_eval = next(
+        node for node in client.get(graph, headers=STUDENT).json()["skills"] if node["skill_name"] == "SQL"
+    )
     assert after_eval["proficiency_score"] == baseline["proficiency_score"]
     assert created["ticket_code"] not in after_eval["evidence_tickets"]
 
     signed = client.patch(f"/api/v1/lwi/{created['id']}/cosign", headers={"X-Persona": "faculty"})
     assert signed.status_code == 200
     assert signed.json()["status"] == "MASTERED"
-    assert client.patch(f"/api/v1/lwi/{created['id']}/status", headers=STUDENT, json={"status": "MASTERED"}).status_code == 409
+    assert (
+        client.patch(f"/api/v1/lwi/{created['id']}/status", headers=STUDENT, json={"status": "MASTERED"}).status_code
+        == 409
+    )
     after = next(node for node in client.get(graph, headers=STUDENT).json()["skills"] if node["skill_name"] == "SQL")
     # Faculty co-sign is what writes the skill graph.
     assert after["proficiency_score"] > after_eval["proficiency_score"]

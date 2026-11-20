@@ -21,8 +21,14 @@ export function PlacementView({
       <section className="surface flex flex-col p-4">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Job description</p>
         <h1 className="mt-1 text-xl font-semibold">Placement copilot</h1>
-        <p className="mb-3 mt-1 text-sm text-slate-500">Match the description against verified skills, then drop a 14-day prep sprint on the board.</p>
-        <textarea className="field min-h-64 flex-1 text-sm leading-6" value={job} onChange={(event) => setJob(event.target.value)} />
+        <p className="mb-3 mt-1 text-sm text-slate-500">
+          Match the description against verified skills, then drop a 14-day prep sprint on the board.
+        </p>
+        <textarea
+          className="field min-h-64 flex-1 text-sm leading-6"
+          value={job}
+          onChange={(event) => setJob(event.target.value)}
+        />
         <div className="mt-3 flex gap-2">
           <button
             disabled={busy}
@@ -40,7 +46,9 @@ export function PlacementView({
         </div>
       </section>
       <section className="surface p-4">
-        {!result && <p className="text-sm text-slate-500">The match, the missing skills, and the prep tickets will land here.</p>}
+        {!result && (
+          <p className="text-sm text-slate-500">The match, the missing skills, and the prep tickets will land here.</p>
+        )}
         {result && (
           <div>
             <div className="flex items-center gap-4">
@@ -54,7 +62,9 @@ export function PlacementView({
             <div className="mt-4">
               <p className="text-xs font-semibold text-emerald-700">Already verified</p>
               <div className="mt-1 flex flex-wrap gap-1.5">
-                {result.matched_skills.length === 0 && <span className="text-xs text-slate-400">None at the 70 bar</span>}
+                {result.matched_skills.length === 0 && (
+                  <span className="text-xs text-slate-400">None at the 70 bar</span>
+                )}
                 {result.matched_skills.map((skill) => (
                   <span key={skill} className="rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
                     {skill}

@@ -20,7 +20,9 @@ def _story(client: TestClient, needle: str) -> dict:
 
 def test_same_story_from_two_outlets_scores_as_a_duplicate():
     left = fingerprint("A campus lab trains a small neural model on handwritten digits")
-    right = fingerprint("Students train a small neural model to read handwritten digits - AI Research Wire", "AI Research Wire")
+    right = fingerprint(
+        "Students train a small neural model to read handwritten digits - AI Research Wire", "AI Research Wire"
+    )
     other = fingerprint("Query planners now explain hash joins in plain language")
     assert story_similarity(left, right) >= FUSION_OVERLAP
     assert story_similarity(left, other) < FUSION_OVERLAP
@@ -34,14 +36,23 @@ def test_skills_are_read_from_whole_words():
 
 
 def test_free_form_task_skills_snap_to_the_skill_graph():
-    story = SignalMessage(title="LoRA quantization cuts VRAM for fine-tuning", summary="A 4-bit recipe keeps model accuracy.")
+    story = SignalMessage(
+        title="LoRA quantization cuts VRAM for fine-tuning", summary="A 4-bit recipe keeps model accuracy."
+    )
     assert graph_skill("sql", story) == "SQL"
     assert graph_skill("memory profiling", story) == "Machine Learning"
 
 
 def test_explainer_rejects_an_answer_outside_the_options():
     try:
-        Explainer(concept="A concept sentence.", use_case="A use case sentence.", question="Which one?", options=["a", "b", "c"], answer_index=3, why="Because it is.")
+        Explainer(
+            concept="A concept sentence.",
+            use_case="A use case sentence.",
+            question="Which one?",
+            options=["a", "b", "c"],
+            answer_index=3,
+            why="Because it is.",
+        )
     except ValueError:
         return
     raise AssertionError("answer_index 3 should be rejected for three options")
@@ -84,7 +95,9 @@ def test_story_becomes_a_backlog_task_once(client: TestClient):
     refreshed = _story(client, "LoRA quantization")
     assert refreshed["task_lwi_id"] == body["lwi"]["id"]
     assert any(badge["kind"] == "task" for badge in refreshed["badges"])
-    assert client.post(f"/api/v1/signals/messages/{lora['id']}/task", headers={"X-Persona": "faculty"}).status_code == 403
+    assert (
+        client.post(f"/api/v1/signals/messages/{lora['id']}/task", headers={"X-Persona": "faculty"}).status_code == 403
+    )
 
 
 def test_relevance_badges_explain_the_skill_graph_link(client: TestClient):
@@ -97,7 +110,10 @@ def test_relevance_badges_explain_the_skill_graph_link(client: TestClient):
 def test_explain_and_quiz_award_xp_once(client: TestClient):
     story = _story(client, "FastAPI services face")
     untouched = _story(client, "Linux 6.x scheduler")
-    assert client.post(f"/api/v1/signals/messages/{untouched['id']}/quiz", headers=STUDENT, json={"choice": 0}).status_code == 409
+    assert (
+        client.post(f"/api/v1/signals/messages/{untouched['id']}/quiz", headers=STUDENT, json={"choice": 0}).status_code
+        == 409
+    )
 
     card = client.post(f"/api/v1/signals/messages/{story['id']}/explain", headers=STUDENT)
     assert card.status_code == 200
@@ -112,12 +128,16 @@ def test_explain_and_quiz_award_xp_once(client: TestClient):
 
     with SessionLocal() as db:
         answer = json.loads(db.get(SignalMessage, story["id"]).explainer_json)["card"]["answer_index"]
-    passed = client.post(f"/api/v1/signals/messages/{story['id']}/quiz", headers=STUDENT, json={"choice": answer}).json()
+    passed = client.post(
+        f"/api/v1/signals/messages/{story['id']}/quiz", headers=STUDENT, json={"choice": answer}
+    ).json()
     assert passed["correct"] is True
     assert passed["skill"] == "FastAPI"
     assert passed["xp_awarded"] == 2
 
-    repeat = client.post(f"/api/v1/signals/messages/{story['id']}/quiz", headers=STUDENT, json={"choice": answer}).json()
+    repeat = client.post(
+        f"/api/v1/signals/messages/{story['id']}/quiz", headers=STUDENT, json={"choice": answer}
+    ).json()
     assert repeat["correct"] is True
     assert repeat["xp_awarded"] == 0
     assert repeat["already_passed"] is True

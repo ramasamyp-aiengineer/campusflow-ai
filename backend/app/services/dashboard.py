@@ -126,10 +126,7 @@ def build_dashboard(db: Session, student: User) -> dict:
 
     feeds = db.query(FeedSubscription).filter(FeedSubscription.student_id == student.id).all()
     messages = (
-        db.query(SignalMessage)
-        .filter(SignalMessage.student_id == student.id)
-        .order_by(SignalMessage.id.desc())
-        .all()
+        db.query(SignalMessage).filter(SignalMessage.student_id == student.id).order_by(SignalMessage.id.desc()).all()
     )
     labels = {feed.id: feed.label for feed in feeds}
     mix = {label: 0 for label in SENTIMENTS}
@@ -197,7 +194,12 @@ def build_dashboard(db: Session, student: User) -> dict:
             )
         ),
         "activity": [
-            {"action": event.action, "detail": event.detail, "actor_role": event.actor_role, "created_at": event.created_at}
+            {
+                "action": event.action,
+                "detail": event.detail,
+                "actor_role": event.actor_role,
+                "created_at": event.created_at,
+            }
             for event in events
         ],
     }

@@ -1,8 +1,8 @@
 import httpx
 import pytest
 from app.services import signals
+from app.services.builtin_feeds import BRIEFING_XML, ML_XML
 from app.services.signals import (
-    BRIEFING_XML,
     _check_peer,
     analyze_sentiment,
     article_brief,
@@ -123,8 +123,15 @@ def test_unnamed_stories_are_grouped_by_shared_keywords():
 
     def story(story_id: int, title: str):
         return SimpleNamespace(
-            id=story_id, title=title, summary="", source="Daily Paper", published_at="",
-            sentiment="Neutral", sentiment_score=0, relevance_score=70, is_read=False,
+            id=story_id,
+            title=title,
+            summary="",
+            source="Daily Paper",
+            published_at="",
+            sentiment="Neutral",
+            sentiment_score=0,
+            relevance_score=70,
+            is_read=False,
         )
 
     stories = [
@@ -140,9 +147,15 @@ def test_unnamed_stories_are_grouped_by_shared_keywords():
     assert sum(cluster["count"] for cluster in report["clusters"]) == 4
     assert report["clusters"][-1]["label"] == "Other stories"
     assert all(cluster["count"] >= 2 for cluster in report["clusters"] if cluster["label"] != "Other stories")
-    assert all("drones" not in cluster["keywords"] for cluster in report["clusters"] if cluster["label"] != "Other stories")
+    assert all(
+        "drones" not in cluster["keywords"] for cluster in report["clusters"] if cluster["label"] != "Other stories"
+    )
 
-    security = [story(5, "Phishing scam targets bank users"), story(6, "Hackers breach a hospital network"), story(7, "Bank phishing alerts rise")]
+    security = [
+        story(5, "Phishing scam targets bank users"),
+        story(6, "Hackers breach a hospital network"),
+        story(7, "Bank phishing alerts rise"),
+    ]
     labels = {cluster["label"] for cluster in analyze_interest(security, "Cybersecurity")["clusters"]}
     assert "Security" not in labels
 
@@ -170,7 +183,6 @@ def test_gemini_failure_falls_back_for_the_whole_batch(monkeypatch):
 
 
 def test_failed_new_interest_is_not_saved(client: TestClient, monkeypatch):
-    
     def unreachable(url: str, transport=None) -> str:
         raise httpx.ConnectError("down")
 
@@ -218,8 +230,6 @@ def test_eight_hour_lock_and_inbox(client: TestClient):
 
 
 def test_machine_learning_interest_drops_unrelated_items():
-    from app.services.signals import ML_XML
-
     items = parse_feed(ML_XML)
     kept = [judge_item(item, {"sql"}, "Machine Learning") for item in items]
     titles = [item.raw.title for item in kept if item]

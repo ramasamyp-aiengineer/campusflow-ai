@@ -356,7 +356,14 @@ export interface InterestAnalysis {
 }
 
 export interface Dashboard {
-  student: { name: string; anon_token: string; program: string; semester: number; cgpa: number; avatar_initials: string };
+  student: {
+    name: string;
+    anon_token: string;
+    program: string;
+    semester: number;
+    cgpa: number;
+    avatar_initials: string;
+  };
   semester_progress: number;
   verified_skill_score: number;
   shortlist_ready: boolean;

@@ -60,7 +60,9 @@ def test_logout_revokes_the_token(client: TestClient):
 def test_expired_sessions_are_refused():
     with SessionLocal() as db:
         user = db.query(User).filter(User.anon_token == "STU_8921").one()
-        db.add(AuthSession(token_hash=_token_hash("old-token"), user_id=user.id, expires_at="2020-01-01T00:00:00+00:00"))
+        db.add(
+            AuthSession(token_hash=_token_hash("old-token"), user_id=user.id, expires_at="2020-01-01T00:00:00+00:00")
+        )
         db.commit()
         assert session_for(db, "old-token") is None
 
@@ -77,4 +79,7 @@ def test_demo_switch_issues_a_session_without_client_password(client: TestClient
     assert response.status_code == 200
     body = response.json()
     assert body["user"]["persona"] == "faculty"
-    assert client.get("/api/v1/faculty/cohort-health", headers={"Authorization": f"Bearer {body['token']}"}).status_code == 200
+    assert (
+        client.get("/api/v1/faculty/cohort-health", headers={"Authorization": f"Bearer {body['token']}"}).status_code
+        == 200
+    )

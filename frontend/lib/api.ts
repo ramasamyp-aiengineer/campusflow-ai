@@ -1,6 +1,7 @@
 import { SIGNED_OUT_EVENT, clearToken, getToken } from "./session";
 import type { Persona } from "./types";
 
+/** Browser-facing API origin. Defaults to the local FastAPI process. */
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:8000";
 
 export class ApiError extends Error {
@@ -12,6 +13,7 @@ export class ApiError extends Error {
   }
 }
 
+/** Accept only http(s) links so story cards cannot open javascript: URLs. */
 export function safeHref(url: string): string | undefined {
   try {
     const parsed = new URL(url);
@@ -21,6 +23,10 @@ export function safeHref(url: string): string | undefined {
   }
 }
 
+/**
+ * Authenticated JSON fetch against the CampusFlow API.
+ * A 401 clears the session and notifies the shell to return to sign-in.
+ */
 export async function api<T>(path: string, _persona: Persona | null, init?: RequestInit): Promise<T> {
   const token = getToken();
   let response: Response;

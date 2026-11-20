@@ -84,7 +84,12 @@ export function ClusterBars({ clusters }: { clusters: SignalCluster[] }) {
             {SENTIMENT_ORDER.map((label) => {
               const count = cluster.sentiments[label] ?? 0;
               if (!count) return null;
-              return <div key={label} style={{ width: `${(count / cluster.count) * 100}%`, background: SENTIMENT_STYLE[label].bar }} />;
+              return (
+                <div
+                  key={label}
+                  style={{ width: `${(count / cluster.count) * 100}%`, background: SENTIMENT_STYLE[label].bar }}
+                />
+              );
             })}
           </div>
         </li>

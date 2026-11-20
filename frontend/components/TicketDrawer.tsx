@@ -50,7 +50,8 @@ export function TicketDrawer({
       <div className="grid grid-cols-4 gap-1 px-4 pt-3">
         {COLUMNS.map((column) => {
           const active = detail.status === column.id;
-          const locked = (detail.blocked && column.id !== "BACKLOG") || (column.id === "MASTERED" && detail.status !== "AI_REVIEW");
+          const locked =
+            (detail.blocked && column.id !== "BACKLOG") || (column.id === "MASTERED" && detail.status !== "AI_REVIEW");
           return (
             <button
               key={column.id}
@@ -105,9 +106,17 @@ export function TicketDrawer({
             <p className="text-xs leading-5 text-slate-500">
               The tutor will not write the graded answer. Paste the point where you are stuck, or try the refusal case.
             </p>
-            <textarea className="field min-h-28 text-sm" value={message} onChange={(event) => setMessage(event.target.value)} />
+            <textarea
+              className="field min-h-28 text-sm"
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+            />
             <div className="flex flex-wrap gap-2">
-              <button disabled={busy} onClick={() => onUnblock(message)} className="rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-white">
+              <button
+                disabled={busy}
+                onClick={() => onUnblock(message)}
+                className="rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-white"
+              >
                 Ask for a hint
               </button>
               <button
@@ -131,18 +140,35 @@ export function TicketDrawer({
                 <li key={criterion}>· {criterion}</li>
               ))}
             </ul>
-            <textarea className="field min-h-32 text-sm" value={submission} onChange={(event) => setSubmission(event.target.value)} />
+            <textarea
+              className="field min-h-32 text-sm"
+              value={submission}
+              onChange={(event) => setSubmission(event.target.value)}
+            />
             <div className="flex flex-wrap gap-2">
-              <button disabled={busy} onClick={() => onEvaluate(submission)} className="rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-white">
+              <button
+                disabled={busy}
+                onClick={() => onEvaluate(submission)}
+                className="rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-white"
+              >
                 Run rubric audit
               </button>
-              <button className="rounded-full border border-line px-3 py-1.5 text-xs" onClick={() => setSubmission(STRONG_DRAFT)}>
+              <button
+                className="rounded-full border border-line px-3 py-1.5 text-xs"
+                onClick={() => setSubmission(STRONG_DRAFT)}
+              >
                 Strong draft
               </button>
-              <button className="rounded-full border border-line px-3 py-1.5 text-xs" onClick={() => setSubmission(THIN_DRAFT)}>
+              <button
+                className="rounded-full border border-line px-3 py-1.5 text-xs"
+                onClick={() => setSubmission(THIN_DRAFT)}
+              >
                 Thin draft
               </button>
-              <button className="rounded-full border border-line px-3 py-1.5 text-xs" onClick={() => setSubmission(CHEAT_DRAFT)}>
+              <button
+                className="rounded-full border border-line px-3 py-1.5 text-xs"
+                onClick={() => setSubmission(CHEAT_DRAFT)}
+              >
                 Direct solution
               </button>
             </div>
@@ -150,11 +176,16 @@ export function TicketDrawer({
               <div className="flex items-end justify-between rounded-xl bg-canvas px-3 py-3">
                 <div>
                   <p className="text-[11px] uppercase tracking-wide text-slate-500">Readiness</p>
-                  <p className="mono text-3xl font-semibold" style={{ color: score >= 75 ? "#059669" : score >= 55 ? "#D97706" : "#E11D48" }}>
+                  <p
+                    className="mono text-3xl font-semibold"
+                    style={{ color: score >= 75 ? "#059669" : score >= 55 ? "#D97706" : "#E11D48" }}
+                  >
                     {score}
                   </p>
                 </div>
-                <p className="max-w-[180px] text-right text-xs text-slate-500">Score updates the skill graph at 70+. Mastery still waits for AI Review.</p>
+                <p className="max-w-[180px] text-right text-xs text-slate-500">
+                  Score updates the skill graph at 70+. Mastery still waits for AI Review.
+                </p>
               </div>
             )}
             <ResultCard result={result} />
@@ -162,7 +193,9 @@ export function TicketDrawer({
         )}
         {tab === "deps" && (
           <ol className="space-y-2">
-            {detail.prerequisite_chain.length === 0 && <li className="text-sm text-slate-500">This ticket has no open prerequisite chain.</li>}
+            {detail.prerequisite_chain.length === 0 && (
+              <li className="text-sm text-slate-500">This ticket has no open prerequisite chain.</li>
+            )}
             {detail.prerequisite_chain.map((node, index) => (
               <li key={node.id} className="rounded-xl border border-line px-3 py-2">
                 <p className="mono text-[11px] text-slate-500">
@@ -198,7 +231,9 @@ function ResultCard({ result }: { result: AIAction | null }) {
   if (!result) return null;
   const refused = result.result.refused_direct_solution;
   return (
-    <div className={`rounded-xl border px-3 py-3 text-sm ${refused ? "border-amber-200 bg-amber-50" : "border-line bg-white"}`}>
+    <div
+      className={`rounded-xl border px-3 py-3 text-sm ${refused ? "border-amber-200 bg-amber-50" : "border-line bg-white"}`}
+    >
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
         {refused ? "Direct solution refused" : "Guidance"}
       </p>
@@ -208,7 +243,9 @@ function ResultCard({ result }: { result: AIAction | null }) {
         <ul className="mt-3 space-y-1.5">
           {result.result.checks.map((check) => (
             <li key={check.criterion} className="text-xs">
-              <span className={check.passed ? "text-emerald-700" : "text-rose-700"}>{check.passed ? "Pass" : "Gap"}</span>
+              <span className={check.passed ? "text-emerald-700" : "text-rose-700"}>
+                {check.passed ? "Pass" : "Gap"}
+              </span>
               <span className="text-slate-600"> · {check.criterion}</span>
             </li>
           ))}

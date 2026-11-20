@@ -26,10 +26,8 @@ from app.schemas import (
 )
 from app.services.async_work import run_blocking
 from app.services.board import audit, index_items, lwis_for, persona_user, sprint_out, to_lwi
+from app.services.builtin_feeds import BRIEFING_XML, BUILTIN_FEEDS, BUILTIN_URL
 from app.services.signals import (
-    BRIEFING_XML,
-    BUILTIN_FEEDS,
-    BUILTIN_URL,
     POLL_HOURS,
     analyze_interest,
     hours_remaining,
@@ -133,7 +131,9 @@ def _cooldown(feed: FeedSubscription) -> HTTPException:
 @router.get("", response_model=SignalInbox)
 def inbox(persona: str = Depends(require("student")), db: Session = Depends(get_db)) -> SignalInbox:
     student = persona_user(db, persona)
-    feeds = db.query(FeedSubscription).filter(FeedSubscription.student_id == student.id).order_by(FeedSubscription.id).all()
+    feeds = (
+        db.query(FeedSubscription).filter(FeedSubscription.student_id == student.id).order_by(FeedSubscription.id).all()
+    )
     messages = (
         db.query(SignalMessage)
         .filter(SignalMessage.student_id == student.id)
@@ -201,7 +201,12 @@ async def subscribe(
     db.commit()
     db.refresh(feed)
     return SubscribeResult(
-        feed=_feed_out(feed), seen=stats["seen"], kept=stats["kept"], held=stats["held"], fused=stats["fused"], next_poll_at=feed.next_poll_at
+        feed=_feed_out(feed),
+        seen=stats["seen"],
+        kept=stats["kept"],
+        held=stats["held"],
+        fused=stats["fused"],
+        next_poll_at=feed.next_poll_at,
     )
 
 
@@ -235,7 +240,12 @@ def briefing(
     db.commit()
     db.refresh(feed)
     return SubscribeResult(
-        feed=_feed_out(feed), seen=stats["seen"], kept=stats["kept"], held=stats["held"], fused=stats["fused"], next_poll_at=feed.next_poll_at
+        feed=_feed_out(feed),
+        seen=stats["seen"],
+        kept=stats["kept"],
+        held=stats["held"],
+        fused=stats["fused"],
+        next_poll_at=feed.next_poll_at,
     )
 
 
@@ -272,7 +282,12 @@ async def story_to_task(
         audit(db, student, "signals.task", f"story={message.id} -> {row.ticket_code} via {transport}")
     db.commit()
     by_id = index_items(lwis_for(db, student.id))
-    return StoryTaskOut(lwi=to_lwi(by_id[row.id], by_id), sprint=sprint_out(db, sprint, student.id), created=created, transport=transport)
+    return StoryTaskOut(
+        lwi=to_lwi(by_id[row.id], by_id),
+        sprint=sprint_out(db, sprint, student.id),
+        created=created,
+        transport=transport,
+    )
 
 
 @router.post("/messages/{message_id}/explain", response_model=ExplainerOut)
@@ -289,7 +304,12 @@ async def explain_story(
     card, source = await run_blocking(build_explainer, message)
     db.commit()
     return ExplainerOut(
-        concept=card.concept, use_case=card.use_case, question=card.question, options=card.options, source=source, quiz_passed=bool(message.quiz_passed)
+        concept=card.concept,
+        use_case=card.use_case,
+        question=card.question,
+        options=card.options,
+        source=source,
+        quiz_passed=bool(message.quiz_passed),
     )
 
 
@@ -323,7 +343,9 @@ def drift(persona: str = Depends(require("faculty", "tpo")), db: Session = Depen
 
 
 @router.get("/feeds/{feed_id}/analysis", response_model=InterestAnalysis)
-def interest_analysis(feed_id: int, persona: str = Depends(require("student")), db: Session = Depends(get_db)) -> InterestAnalysis:
+def interest_analysis(
+    feed_id: int, persona: str = Depends(require("student")), db: Session = Depends(get_db)
+) -> InterestAnalysis:
     student = persona_user(db, persona)
     feed = db.get(FeedSubscription, feed_id)
     if feed is None or feed.student_id != student.id:

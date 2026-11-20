@@ -17,9 +17,7 @@ export function Radar({ skills }: { skills: Skill[] }) {
   };
 
   const grid = [0.35, 0.65, 1];
-  const polygon = points
-    .map((skill, index) => at(index, skill.proficiency_score / 100).join(","))
-    .join(" ");
+  const polygon = points.map((skill, index) => at(index, skill.proficiency_score / 100).join(",")).join(" ");
 
   return (
     <div>

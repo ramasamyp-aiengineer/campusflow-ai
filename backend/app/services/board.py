@@ -22,6 +22,7 @@ class SprintCapacityError(Exception):
         self.kind = kind
         super().__init__(kind)
 
+
 CORE_SKILLS = {
     "SQL",
     "Data Structures",
@@ -38,7 +39,8 @@ CORE_SKILLS = {
 }
 
 
-def loads(raw: str | None, fallback):
+def loads[T](raw: str | None, fallback: T) -> T:
+    """Parse JSON text or return the caller-supplied fallback."""
     if not raw:
         return fallback
     try:
@@ -57,12 +59,7 @@ def persona_user(db: Session, persona: str) -> User:
         user = db.get(User, bound)
         if user is not None and user.role == role:
             return user
-    user = (
-        db.query(User)
-        .filter(User.role == role, User.is_persona.is_(True))
-        .order_by(User.id)
-        .first()
-    )
+    user = db.query(User).filter(User.role == role, User.is_persona.is_(True)).order_by(User.id).first()
     if user is None:
         raise LookupError(f"No persona user for {persona}")
     return user
@@ -147,7 +144,9 @@ def chain_for(item: LearningWorkItem, by_id: dict[int, LearningWorkItem]) -> lis
     return nodes
 
 
-def dependents_for(item: LearningWorkItem, items: list[LearningWorkItem], by_id: dict[int, LearningWorkItem]) -> list[ChainNode]:
+def dependents_for(
+    item: LearningWorkItem, items: list[LearningWorkItem], by_id: dict[int, LearningWorkItem]
+) -> list[ChainNode]:
     return [
         ChainNode(
             id=other.id,
@@ -207,9 +206,7 @@ def sprints_out(db: Session, sprints: list[Sprint], student_id: int) -> list[Spr
 def visible_sprints(db: Session, student_id: int) -> list[Sprint]:
     sprint_ids = {
         row[0]
-        for row in db.query(LearningWorkItem.sprint_id)
-        .filter(LearningWorkItem.student_id == student_id)
-        .distinct()
+        for row in db.query(LearningWorkItem.sprint_id).filter(LearningWorkItem.student_id == student_id).distinct()
     }
     if not sprint_ids:
         return []
@@ -307,11 +304,7 @@ def verified_average(nodes: list[SkillNode]) -> int:
 def boost_skill(db: Session, student: User, skill: str, ticket_code: str, score: int) -> None:
     if score < PASS_SCORE:
         return
-    node = (
-        db.query(SkillNode)
-        .filter(SkillNode.student_id == student.id, SkillNode.skill_name == skill)
-        .first()
-    )
+    node = db.query(SkillNode).filter(SkillNode.student_id == student.id, SkillNode.skill_name == skill).first()
     if node is None:
         node = SkillNode(
             student_id=student.id,
@@ -356,9 +349,7 @@ def blocked_core_counts(db: Session, student_ids: list[int]) -> dict[int, int]:
         by_student.setdefault(item.student_id, []).append(item)
     for student_id, rows in by_student.items():
         by_id = index_items(rows)
-        counts[student_id] = sum(
-            1 for item in rows if item.skill_tag in CORE_SKILLS and block_reason(item, by_id)
-        )
+        counts[student_id] = sum(1 for item in rows if item.skill_tag in CORE_SKILLS and block_reason(item, by_id))
     return counts
 
 

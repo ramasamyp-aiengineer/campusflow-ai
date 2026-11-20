@@ -196,7 +196,10 @@ def fallback_sprint(title: str, course_code: str, syllabus: str, weeks: int) -> 
         )
         for topic in (topics or [f"Apply {unit_name}"])[:3]:
             topic_skill = infer_skill(topic)
-            advanced = any(word in topic.lower() for word in ("optimi", "transaction", "deadlock", "distributed", "index", "security"))
+            advanced = any(
+                word in topic.lower()
+                for word in ("optimi", "transaction", "deadlock", "distributed", "index", "security")
+            )
             items.append(
                 GeneratedItem(
                     title=topic[:140],
@@ -253,7 +256,9 @@ def fallback_evaluation(submission: str, rubric: list[str], skill: str) -> Evalu
         "edge": any(word in lowered for word in ("edge", "null", "empty", "boundary", "unmatched", "zero")),
         "cost": any(word in lowered for word in ("complex", "o(n", "o(1", "tradeoff", "index", "cost", "latency")),
         "errors": any(word in lowered for word in ("error", "exception", "rollback", "status", "invalid", "fail")),
-        "reasoning": any(word in lowered for word in ("because", "therefore", "so that", "instead of", "trade-off", "tradeoff")),
+        "reasoning": any(
+            word in lowered for word in ("because", "therefore", "so that", "instead of", "trade-off", "tradeoff")
+        ),
     }
     score = 38 + min(12, len(submission) // 40)
     score += 14 if signals["edge"] else 0
@@ -281,7 +286,11 @@ def fallback_evaluation(submission: str, rubric: list[str], skill: str) -> Evalu
         checks.append(RubricCheck(criterion=criterion, passed=passed, note=note))
         if not passed:
             fixes.append(f"Add: {criterion}")
-    gap = "The draft covers the happy path and still needs the failing case made explicit." if score < 80 else "The draft is close. Tighten the justification before mastery."
+    gap = (
+        "The draft covers the happy path and still needs the failing case made explicit."
+        if score < 80
+        else "The draft is close. Tighten the justification before mastery."
+    )
     question = GUIDES.get(skill, "Which assumption in this draft fails first?")
     return EvaluationResult(
         refused_direct_solution=False,
@@ -296,7 +305,11 @@ def fallback_evaluation(submission: str, rubric: list[str], skill: str) -> Evalu
 
 def fallback_jd(job_text: str, scores: dict[str, int]) -> JDPlan:
     lowered = job_text.lower()
-    found = [skill for skill in JD_SKILLS if skill.lower() in lowered or any(part in lowered for part in skill.lower().split())]
+    found = [
+        skill
+        for skill in JD_SKILLS
+        if skill.lower() in lowered or any(part in lowered for part in skill.lower().split())
+    ]
     if "sde" in lowered or "backend" in lowered:
         for skill in ("Python", "SQL", "API Design", "System Design"):
             if skill not in found:
@@ -316,7 +329,9 @@ def fallback_jd(job_text: str, scores: dict[str, int]) -> JDPlan:
     weight = sum(min(100, scores.get(skill, 35)) for skill in found)
     match = round(weight / max(1, len(found)))
     role = "Target role"
-    role_match = re.search(r"(genai engineer|sde[-\s]?1[^.\n]*|backend engineer[^.\n]*|software engineer[^.\n]*)", job_text, re.I)
+    role_match = re.search(
+        r"(genai engineer|sde[-\s]?1[^.\n]*|backend engineer[^.\n]*|software engineer[^.\n]*)", job_text, re.I
+    )
     if role_match:
         role = role_match.group(1).strip()
     items = []
@@ -439,7 +454,11 @@ def complete_json(task: str, guarded: GuardedText, schema_hint: str, model: type
     prompt = build_model_prompt(task, guarded, schema_hint)
     last_error = "invalid"
     for _ in range(2):
-        payload = _gemini_json(prompt if last_error == "invalid" else prompt + f"\nPrevious output failed validation: {last_error}. Return corrected JSON only.")
+        payload = _gemini_json(
+            prompt
+            if last_error == "invalid"
+            else prompt + f"\nPrevious output failed validation: {last_error}. Return corrected JSON only."
+        )
         if payload is None:
             return None, "deterministic-fallback"
         try:
@@ -491,7 +510,9 @@ def plan_sprint(title: str, course_code: str, syllabus: str, weeks: int) -> tupl
     return model, guarded
 
 
-def plan_evaluation(submission: str, rubric: list[str], skill: str, ticket: str) -> tuple[EvaluationResult, GuardedText]:
+def plan_evaluation(
+    submission: str, rubric: list[str], skill: str, ticket: str
+) -> tuple[EvaluationResult, GuardedText]:
     guarded = guard_untrusted(submission, "deterministic-fallback")
     # Direct-solution requests are refused before the model can comply.
     if wants_direct_solution(submission):
@@ -513,7 +534,12 @@ def plan_evaluation(submission: str, rubric: list[str], skill: str, ticket: str)
         model = fallback_evaluation(guarded.redacted, rubric, skill)
         transport = "deterministic-fallback"
     if model.refused_direct_solution:
-        model = model.model_copy(update={"readiness_score": None, "remediation_title": model.remediation_title or f"15-min: isolate one {skill} gap"})
+        model = model.model_copy(
+            update={
+                "readiness_score": None,
+                "remediation_title": model.remediation_title or f"15-min: isolate one {skill} gap",
+            }
+        )
     guarded.meta.transport = transport
     return model, guarded
 
@@ -579,6 +605,11 @@ def plan_jd(job_text: str, scores: dict[str, int]) -> tuple[JDPlan, GuardedText]
         model = fallback_jd(guarded.redacted, scores)
         transport = "deterministic-fallback"
     else:
-        model = model.model_copy(update={"prep_items": _normalize_items(model.prep_items), "match_percent": max(0, min(100, model.match_percent))})
+        model = model.model_copy(
+            update={
+                "prep_items": _normalize_items(model.prep_items),
+                "match_percent": max(0, min(100, model.match_percent)),
+            }
+        )
     guarded.meta.transport = transport
     return model, guarded

@@ -65,7 +65,8 @@ export function DashboardView({
   onOpenSprint: (id: number) => void;
   onOpenTopics: () => void;
 }) {
-  if (!data) return <div className="grid h-full place-items-center text-sm text-slate-500">Pulling your record together…</div>;
+  if (!data)
+    return <div className="grid h-full place-items-center text-sm text-slate-500">Pulling your record together…</div>;
   const { tickets, interests, skills } = data;
   const firstName = data.student.name.split(" ")[0];
 
@@ -88,7 +89,9 @@ export function DashboardView({
               data.shortlist_ready ? "bg-[#E7F3EF] text-brand" : "bg-amber-50 text-amber-800"
             }`}
           >
-            {data.shortlist_ready ? "Shortlist ready" : `${data.shortlist_bar - data.verified_skill_score} points from the shortlist bar`}
+            {data.shortlist_ready
+              ? "Shortlist ready"
+              : `${data.shortlist_bar - data.verified_skill_score} points from the shortlist bar`}
           </span>
         </header>
 
@@ -97,7 +100,12 @@ export function DashboardView({
             <Ring value={data.semester_progress} size={58} color="#C46B2C" track="#F3EEE6" />
           </StatCard>
           <StatCard label="Verified skill" hint={`${skills.count} skills with evidence`}>
-            <Ring value={data.verified_skill_score} size={58} color={scoreColor(data.verified_skill_score)} track="#F3EEE6" />
+            <Ring
+              value={data.verified_skill_score}
+              size={58}
+              color={scoreColor(data.verified_skill_score)}
+              track="#F3EEE6"
+            />
           </StatCard>
           <StatCard label="Tickets mastered" hint={`${tickets.points_mastered} of ${tickets.points_total} points`}>
             <p className="mono text-2xl font-semibold text-ink">
@@ -125,14 +133,19 @@ export function DashboardView({
                           onClick={() => onNavigate(action.view)}
                           className="group flex w-full items-center gap-3 rounded-2xl border border-line bg-[#FBF9F5] px-3 py-3 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-card"
                         >
-                          <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${action.kind === "unblock" ? "bg-rose-50 text-rose-700" : "bg-[#F4E6CF] text-copper"}`}>
+                          <span
+                            className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${action.kind === "unblock" ? "bg-rose-50 text-rose-700" : "bg-[#F4E6CF] text-copper"}`}
+                          >
                             <Icon size={16} />
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block text-sm font-semibold text-ink">{action.title}</span>
                             <span className="block text-xs text-slate-500">{action.detail}</span>
                           </span>
-                          <ArrowRight size={16} className="text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-ink" />
+                          <ArrowRight
+                            size={16}
+                            className="text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-ink"
+                          />
                         </button>
                       </li>
                     );
@@ -141,17 +154,30 @@ export function DashboardView({
               )}
             </Panel>
 
-            <Panel title="Ticket pipeline" note={tickets.blocked ? `${tickets.blocked} blocked by a prerequisite` : "Nothing blocked"}>
+            <Panel
+              title="Ticket pipeline"
+              note={tickets.blocked ? `${tickets.blocked} blocked by a prerequisite` : "Nothing blocked"}
+            >
               <div className="flex h-3 overflow-hidden rounded-full bg-[#F3EEE6]">
                 {PIPELINE.map((stage) => {
                   const count = tickets[stage.key];
                   if (!count || !tickets.total) return null;
-                  return <div key={stage.key} title={`${stage.label} ${count}`} style={{ width: `${(count / tickets.total) * 100}%`, background: stage.color }} />;
+                  return (
+                    <div
+                      key={stage.key}
+                      title={`${stage.label} ${count}`}
+                      style={{ width: `${(count / tickets.total) * 100}%`, background: stage.color }}
+                    />
+                  );
                 })}
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {PIPELINE.map((stage) => (
-                  <button key={stage.key} onClick={() => onNavigate("board")} className="rounded-xl px-2 py-1.5 text-left hover:bg-[#FBF9F5]">
+                  <button
+                    key={stage.key}
+                    onClick={() => onNavigate("board")}
+                    className="rounded-xl px-2 py-1.5 text-left hover:bg-[#FBF9F5]"
+                  >
                     <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
                       <span className="h-2 w-2 rounded-full" style={{ background: stage.color }} />
                       {stage.label}
@@ -166,12 +192,18 @@ export function DashboardView({
               <ul className="divide-y divide-line">
                 {data.sprints.map((sprint) => (
                   <li key={sprint.id}>
-                    <button onClick={() => onOpenSprint(sprint.id)} className="flex w-full items-center gap-3 py-2.5 text-left hover:text-brand">
+                    <button
+                      onClick={() => onOpenSprint(sprint.id)}
+                      className="flex w-full items-center gap-3 py-2.5 text-left hover:text-brand"
+                    >
                       <span className="mono w-14 shrink-0 text-[11px] text-copper">{sprint.course_code}</span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium">{sprint.title}</span>
                         <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-[#F3EEE6]">
-                          <span className="block h-full rounded-full bg-[#E7B15A]" style={{ width: `${sprint.progress_percent}%` }} />
+                          <span
+                            className="block h-full rounded-full bg-[#E7B15A]"
+                            style={{ width: `${sprint.progress_percent}%` }}
+                          />
                         </span>
                       </span>
                       <span className="mono w-16 shrink-0 text-right text-[11px] text-slate-500">
@@ -185,7 +217,11 @@ export function DashboardView({
           </div>
 
           <div className="space-y-5">
-            <Panel title="Skills" note="Only evidence counts" action={{ label: "Open graph", onClick: () => onNavigate("skills") }}>
+            <Panel
+              title="Skills"
+              note="Only evidence counts"
+              action={{ label: "Open graph", onClick: () => onNavigate("skills") }}
+            >
               <ul className="space-y-2.5">
                 {skills.top.map((skill) => (
                   <SkillBar key={skill.name} name={skill.name} score={skill.score} />
@@ -193,12 +229,17 @@ export function DashboardView({
               </ul>
               {skills.weakest && (
                 <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                  Lowest right now: <span className="font-semibold">{skills.weakest.name}</span> at {skills.weakest.score}.
+                  Lowest right now: <span className="font-semibold">{skills.weakest.name}</span> at{" "}
+                  {skills.weakest.score}.
                 </p>
               )}
             </Panel>
 
-            <Panel title="Interests" note={interests.next_fetch ? `Next fetch in ${waitLabel(interests.next_fetch)}` : "No topics yet"} action={{ label: "Open", onClick: onOpenTopics }}>
+            <Panel
+              title="Interests"
+              note={interests.next_fetch ? `Next fetch in ${waitLabel(interests.next_fetch)}` : "No topics yet"}
+              action={{ label: "Open", onClick: onOpenTopics }}
+            >
               {interests.saved ? (
                 <>
                   <SentimentDonut counts={interests.sentiments} caption="Tone of your reading" />
@@ -207,10 +248,15 @@ export function DashboardView({
                       const tone = SENTIMENT_STYLE[story.sentiment] ?? SENTIMENT_STYLE.Neutral;
                       return (
                         <li key={story.id}>
-                          <button onClick={onOpenTopics} className="flex w-full items-start gap-2 text-left text-sm hover:text-brand">
+                          <button
+                            onClick={onOpenTopics}
+                            className="flex w-full items-start gap-2 text-left text-sm hover:text-brand"
+                          >
                             <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: tone.bar }} />
                             <span className="min-w-0">
-                              <span className={`block leading-5 ${story.is_read ? "" : "font-semibold"}`}>{story.title}</span>
+                              <span className={`block leading-5 ${story.is_read ? "" : "font-semibold"}`}>
+                                {story.title}
+                              </span>
                               <span className="text-[11px] text-slate-400">{story.topic}</span>
                             </span>
                           </button>
@@ -220,7 +266,10 @@ export function DashboardView({
                   </ul>
                 </>
               ) : (
-                <button onClick={onOpenTopics} className="inline-flex items-center gap-2 text-sm font-semibold text-brand">
+                <button
+                  onClick={onOpenTopics}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-brand"
+                >
                   <BookOpen size={14} /> Follow your first topic
                 </button>
               )}
@@ -236,7 +285,9 @@ export function DashboardView({
                       <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-copper" />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-baseline justify-between gap-2">
-                          <span className="text-sm font-medium text-ink">{ACTIVITY_LABEL[event.action] ?? event.action}</span>
+                          <span className="text-sm font-medium text-ink">
+                            {ACTIVITY_LABEL[event.action] ?? event.action}
+                          </span>
                           <span className="shrink-0 text-[11px] text-slate-400">{when(event.created_at)}</span>
                         </span>
                         <span className="mono block truncate text-[11px] text-slate-500">{event.detail}</span>

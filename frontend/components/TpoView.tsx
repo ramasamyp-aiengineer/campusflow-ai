@@ -18,7 +18,10 @@ export function TpoView({ matrix, persona }: { matrix: ReadinessMatrix | null; p
     <div className="h-full overflow-auto px-5 py-5">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Training and placement</p>
       <h1 className="text-xl font-semibold">Recruiter readiness</h1>
-      <p className="mb-4 text-sm text-slate-500">Shortlist from recorded skill evidence. An AI review alone does not add a skill. CGPA stays visible so a high grade without proof is obvious.</p>
+      <p className="mb-4 text-sm text-slate-500">
+        Shortlist from recorded skill evidence. An AI review alone does not add a skill. CGPA stays visible so a high
+        grade without proof is obvious.
+      </p>
       {mismatch.length > 0 && (
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {mismatch.map((row) => row.name).join(", ")} would clear a CGPA screen and miss a verified-skill screen.
@@ -61,7 +64,9 @@ export function TpoView({ matrix, persona }: { matrix: ReadinessMatrix | null; p
               <tr key={row.id} className="border-t border-line">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-[11px] font-semibold">{row.avatar_initials}</span>
+                    <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-[11px] font-semibold">
+                      {row.avatar_initials}
+                    </span>
                     <div>
                       <p className="font-medium">{row.name}</p>
                       <p className="text-[11px] text-slate-400">{row.program}</p>
@@ -70,7 +75,10 @@ export function TpoView({ matrix, persona }: { matrix: ReadinessMatrix | null; p
                 </td>
                 <td className="mono px-4 py-3">{row.cgpa.toFixed(1)}</td>
                 <td className="px-4 py-3">
-                  <span className="mono font-semibold" style={{ color: row.verified_skill_score >= 70 ? "#059669" : "#E11D48" }}>
+                  <span
+                    className="mono font-semibold"
+                    style={{ color: row.verified_skill_score >= 70 ? "#059669" : "#E11D48" }}
+                  >
                     {row.verified_skill_score}
                   </span>
                 </td>
@@ -80,7 +88,9 @@ export function TpoView({ matrix, persona }: { matrix: ReadinessMatrix | null; p
                 </td>
                 <td className="px-4 py-3 text-xs text-slate-600">{row.top_skills.join(" · ")}</td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${row.shortlist ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                  <span
+                    className={`rounded-full px-2 py-1 text-[11px] font-semibold ${row.shortlist ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
+                  >
                     {row.shortlist ? "Shortlist" : "Hold"}
                   </span>
                 </td>

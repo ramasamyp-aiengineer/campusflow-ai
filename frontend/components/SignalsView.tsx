@@ -53,7 +53,15 @@ const FLOW = [
   { title: "We group it", detail: "Smaller topics inside your interest" },
 ];
 
-export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Persona; onChanged: () => void; onOpenSprint: (id: number) => void }) {
+export function SignalsView({
+  persona,
+  onChanged,
+  onOpenSprint,
+}: {
+  persona: Persona;
+  onChanged: () => void;
+  onOpenSprint: (id: number) => void;
+}) {
   const [inbox, setInbox] = useState<SignalInbox | null>(null);
   const [analysis, setAnalysis] = useState<InterestAnalysis | null>(null);
   const [topicId, setTopicId] = useState<number | null>(null);
@@ -70,7 +78,9 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
   const load = useCallback(async () => {
     const data = await api<SignalInbox>("/api/v1/signals", persona);
     setInbox(data);
-    setTopicId((current) => (current && data.feeds.some((feed) => feed.id === current) ? current : data.feeds[0]?.id ?? null));
+    setTopicId((current) =>
+      current && data.feeds.some((feed) => feed.id === current) ? current : (data.feeds[0]?.id ?? null),
+    );
     setVersion((value) => value + 1);
   }, [persona]);
 
@@ -124,7 +134,9 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
       });
       setNotice(
         `Done. ${nextTopic} kept ${result.kept} ${result.kept === 1 ? "story" : "stories"}${result.held ? `, skipped ${result.held} off-topic` : ""}${
-          result.fused ? `, and merged ${result.fused} repeat${result.fused === 1 ? "" : "s"} into stories you already had` : ""
+          result.fused
+            ? `, and merged ${result.fused} repeat${result.fused === 1 ? "" : "s"} into stories you already had`
+            : ""
         }.`,
       );
       await load();
@@ -162,7 +174,12 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
     if (message.is_read) return;
     await api(`/api/v1/signals/messages/${message.id}/read`, persona, { method: "PATCH" });
     setInbox((current) =>
-      current ? { ...current, messages: current.messages.map((item) => (item.id === message.id ? { ...item, is_read: true } : item)) } : current,
+      current
+        ? {
+            ...current,
+            messages: current.messages.map((item) => (item.id === message.id ? { ...item, is_read: true } : item)),
+          }
+        : current,
     );
     onChanged();
   }
@@ -179,7 +196,8 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-copper">My interests</p>
             <h1 className="mt-1 text-[1.9rem] leading-tight text-ink">Follow what you care about</h1>
             <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
-              Add a topic with an RSS link. We save the stories that fit, then show you how they feel and what they are about.
+              Add a topic with an RSS link. We save the stories that fit, then show you how they feel and what they are
+              about.
             </p>
           </div>
           <button
@@ -194,7 +212,9 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
           {FLOW.map((step, position) => (
             <li key={step.title} className="rounded-2xl border border-line bg-white px-3 py-2.5">
               <p className="flex items-center gap-2 text-xs font-semibold text-ink">
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-[#F4E6CF] text-[10px] text-copper">{position + 1}</span>
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-[#F4E6CF] text-[10px] text-copper">
+                  {position + 1}
+                </span>
                 {step.title}
               </p>
               <p className="mt-1 text-[11px] text-slate-500">{step.detail}</p>
@@ -219,11 +239,19 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
 
         <div className="mt-6 grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
           <aside className="min-w-0">
-            <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Your topics</p>
-            <div className="flex gap-2 overflow-auto pb-1 lg:block lg:space-y-1.5" role="tablist" aria-label="Interests">
+            <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+              Your topics
+            </p>
+            <div
+              className="flex gap-2 overflow-auto pb-1 lg:block lg:space-y-1.5"
+              role="tablist"
+              aria-label="Interests"
+            >
               {(inbox?.feeds ?? []).map((item) => {
                 const count = inbox?.messages.filter((message) => message.subscription_id === item.id).length ?? 0;
-                const unread = inbox?.messages.filter((message) => message.subscription_id === item.id && !message.is_read).length ?? 0;
+                const unread =
+                  inbox?.messages.filter((message) => message.subscription_id === item.id && !message.is_read).length ??
+                  0;
                 const active = item.id === topicId;
                 return (
                   <button
@@ -232,19 +260,29 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
                     aria-selected={active}
                     onClick={() => setTopicId(item.id)}
                     className={`flex w-60 shrink-0 items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-left transition lg:w-full ${
-                      active ? "bg-ink text-white shadow-lift" : "bg-white text-ink hover:-translate-y-0.5 hover:shadow-card"
+                      active
+                        ? "bg-ink text-white shadow-lift"
+                        : "bg-white text-ink hover:-translate-y-0.5 hover:shadow-card"
                     }`}
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold">{item.label}</span>
-                      <span className={`text-[11px] ${active ? "text-white/60" : "text-slate-400"}`}>{count} saved</span>
+                      <span className={`text-[11px] ${active ? "text-white/60" : "text-slate-400"}`}>
+                        {count} saved
+                      </span>
                     </span>
-                    {unread > 0 && <span className="mono rounded-full bg-copper px-1.5 py-0.5 text-[10px] font-semibold text-white">{unread}</span>}
+                    {unread > 0 && (
+                      <span className="mono rounded-full bg-copper px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                        {unread}
+                      </span>
+                    )}
                   </button>
                 );
               })}
               {(inbox?.feeds.length ?? 0) === 0 && (
-                <p className="rounded-2xl border border-dashed border-line bg-white px-3 py-4 text-sm text-slate-500">No topics yet. Try adding Machine Learning.</p>
+                <p className="rounded-2xl border border-dashed border-line bg-white px-3 py-4 text-sm text-slate-500">
+                  No topics yet. Try adding Machine Learning.
+                </p>
               )}
             </div>
           </aside>
@@ -257,11 +295,14 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
                     <div className="min-w-0">
                       <h2 className="text-2xl leading-tight text-ink">{feed.label}</h2>
                       <p className="mt-1 text-xs text-slate-500">
-                        {stories.length} saved · checked {feed.items_seen} last time, kept {feed.items_kept} · next check in {waitLabel(feed.next_poll_at)}
+                        {stories.length} saved · checked {feed.items_seen} last time, kept {feed.items_kept} · next
+                        check in {waitLabel(feed.next_poll_at)}
                       </p>
                       <p className="mono mt-1 truncate text-[11px] text-slate-400">{feed.url}</p>
                       {feed.last_status === "error" && feed.last_error && (
-                        <p className="mt-2 rounded-xl bg-rose-50 px-3 py-1.5 text-xs text-rose-800">Last check failed: {feed.last_error}</p>
+                        <p className="mt-2 rounded-xl bg-rose-50 px-3 py-1.5 text-xs text-rose-800">
+                          Last check failed: {feed.last_error}
+                        </p>
                       )}
                     </div>
                     <div className="flex gap-2">
@@ -272,12 +313,19 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
                       >
                         <RefreshCw size={13} className={busy ? "animate-spin" : ""} /> Check now
                       </button>
-                      <button onClick={() => void removeInterest(feed.id)} className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-xs text-slate-500 hover:text-rose-700">
+                      <button
+                        onClick={() => void removeInterest(feed.id)}
+                        className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-xs text-slate-500 hover:text-rose-700"
+                      >
                         <Trash2 size={13} /> Remove
                       </button>
                     </div>
                   </div>
-                  <div className="mt-4 flex gap-1 rounded-full bg-[#F3EEE6] p-1" role="tablist" aria-label="Interest views">
+                  <div
+                    className="mt-4 flex gap-1 rounded-full bg-[#F3EEE6] p-1"
+                    role="tablist"
+                    aria-label="Interest views"
+                  >
                     {TABS.map((item) => {
                       const Icon = item.icon;
                       const active = tab === item.id;
@@ -307,7 +355,9 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
                         position={stories.indexOf(story) + 1}
                         total={stories.length}
                         onPrevious={() => void openStory(stories[Math.max(0, stories.indexOf(story) - 1)].id)}
-                        onNext={() => void openStory(stories[Math.min(stories.length - 1, stories.indexOf(story) + 1)].id)}
+                        onNext={() =>
+                          void openStory(stories[Math.min(stories.length - 1, stories.indexOf(story) + 1)].id)
+                        }
                         onUpdated={async () => {
                           await load();
                           onChanged();
@@ -317,8 +367,18 @@ export function SignalsView({ persona, onChanged, onOpenSprint }: { persona: Per
                     ) : (
                       <Empty text="Nothing saved for this topic yet. We will check again at the next fetch." />
                     ))}
-                  {tab === "sentiment" && (report ? <SentimentTab analysis={report} onOpen={openStory} /> : <Empty text="Reading the tone…" />)}
-                  {tab === "topics" && (report ? <TopicsTab analysis={report} onOpen={openStory} /> : <Empty text="Grouping the stories…" />)}
+                  {tab === "sentiment" &&
+                    (report ? (
+                      <SentimentTab analysis={report} onOpen={openStory} />
+                    ) : (
+                      <Empty text="Reading the tone…" />
+                    ))}
+                  {tab === "topics" &&
+                    (report ? (
+                      <TopicsTab analysis={report} onOpen={openStory} />
+                    ) : (
+                      <Empty text="Grouping the stories…" />
+                    ))}
                 </div>
               </>
             ) : (
@@ -357,7 +417,9 @@ function AddInterestForm({
       }}
     >
       <h2 className="text-lg text-ink">Add an interest</h2>
-      <p className="mt-0.5 text-sm text-slate-500">Quick starts are labeled sample stories. A pasted public RSS link is a live feed.</p>
+      <p className="mt-0.5 text-sm text-slate-500">
+        Quick starts are labeled sample stories. A pasted public RSS link is a live feed.
+      </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {SAMPLE_INTERESTS.map((item) => (
           <button
@@ -377,18 +439,36 @@ function AddInterestForm({
       <div className="mt-4 grid gap-3 sm:grid-cols-[220px_1fr]">
         <label htmlFor="interest-topic" className="text-xs font-medium text-slate-500">
           Topic name
-          <input id="interest-topic" className="field mt-1" value={topic} onChange={(event) => onTopic(event.target.value)} placeholder="Machine Learning" required minLength={2} />
+          <input
+            id="interest-topic"
+            className="field mt-1"
+            value={topic}
+            onChange={(event) => onTopic(event.target.value)}
+            placeholder="Machine Learning"
+            required
+            minLength={2}
+          />
         </label>
         <label htmlFor="interest-url" className="text-xs font-medium text-slate-500">
           RSS link
-          <input id="interest-url" className="field mt-1" value={url} onChange={(event) => onUrl(event.target.value)} placeholder="https://news.google.com/rss/search?q=machine+learning" required />
+          <input
+            id="interest-url"
+            className="field mt-1"
+            value={url}
+            onChange={(event) => onUrl(event.target.value)}
+            placeholder="https://news.google.com/rss/search?q=machine+learning"
+            required
+          />
         </label>
       </div>
       <div className="mt-4 flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="rounded-full border border-line px-4 py-2 text-sm">
           Cancel
         </button>
-        <button disabled={busy} className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+        <button
+          disabled={busy}
+          className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        >
           <Rss size={14} /> {busy ? "Fetching…" : "Fetch and save"}
         </button>
       </div>
@@ -469,7 +549,9 @@ function Article({
               <Newspaper size={12} /> Reported by {message.sources.length} sources
             </button>
           )}
-          <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${tone.wash} ${tone.text}`}>{message.sentiment}</span>
+          <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${tone.wash} ${tone.text}`}>
+            {message.sentiment}
+          </span>
         </div>
       </div>
       <h3 className="display mt-3 text-[1.65rem] leading-tight text-ink">{message.title}</h3>
@@ -488,7 +570,12 @@ function Article({
             <li key={`${link.source}-${link.url}`} className="flex items-center justify-between gap-3">
               <span className="font-medium text-ink">{link.source}</span>
               {safeHref(link.url) ? (
-                <a href={safeHref(link.url)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-brand">
+                <a
+                  href={safeHref(link.url)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-brand"
+                >
                   Open <ExternalLink size={12} />
                 </a>
               ) : (
@@ -500,14 +587,20 @@ function Article({
       )}
 
       <div className="mt-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Why this matters for your skill graph</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+          Why this matters for your skill graph
+        </p>
         {reasons.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2">
             {reasons.map((badge) => {
               const style = BADGE_STYLE[badge.kind] ?? BADGE_STYLE.skill;
               const Icon = style.icon;
               return (
-                <span key={badge.label} title={badge.detail} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${style.className}`}>
+                <span
+                  key={badge.label}
+                  title={badge.detail}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${style.className}`}
+                >
                   <Icon size={13} /> {badge.label}
                 </span>
               );
@@ -518,7 +611,9 @@ function Article({
       </div>
 
       <div className="mt-5 rounded-2xl bg-[#F7F4EF] px-4 py-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-copper">{message.brief_source === "gemini" ? "Gemini summary" : "Quick summary"}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-copper">
+          {message.brief_source === "gemini" ? "Gemini summary" : "Quick summary"}
+        </p>
         <p className="mt-2 text-[15px] leading-7 text-ink">{message.brief || message.summary}</p>
       </div>
 
@@ -529,7 +624,8 @@ function Article({
             disabled={!task}
             className="inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white disabled:cursor-default"
           >
-            <ClipboardList size={15} /> {task ? `Added ${task.lwi.ticket_code} to Backlog · open board` : taskBadge?.label}
+            <ClipboardList size={15} />{" "}
+            {task ? `Added ${task.lwi.ticket_code} to Backlog · open board` : taskBadge?.label}
           </button>
         ) : (
           <button
@@ -564,17 +660,30 @@ function Article({
         <p className="mt-1 text-sm leading-6 text-slate-700">{message.sentiment_reason}</p>
       </div>
       <div className="mt-6 flex items-center justify-between gap-3">
-        <button onClick={onPrevious} disabled={position === 1} className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-sm disabled:opacity-40">
+        <button
+          onClick={onPrevious}
+          disabled={position === 1}
+          className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-sm disabled:opacity-40"
+        >
           <ChevronLeft size={14} /> Previous
         </button>
         {safeHref(message.url) ? (
-          <a href={safeHref(message.url)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm font-semibold text-brand">
+          <a
+            href={safeHref(message.url)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-brand"
+          >
             {message.sample ? "Open reference" : "Read the original"} <ExternalLink size={14} />
           </a>
         ) : (
           <span className="text-sm text-slate-400">Original link unavailable</span>
         )}
-        <button onClick={onNext} disabled={position === total} className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1.5 text-sm text-white disabled:opacity-40">
+        <button
+          onClick={onNext}
+          disabled={position === total}
+          className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1.5 text-sm text-white disabled:opacity-40"
+        >
           Next <ChevronRight size={14} />
         </button>
       </div>
@@ -582,7 +691,15 @@ function Article({
   );
 }
 
-function QuizDrawer({ messageId, persona, onPassed }: { messageId: number; persona: Persona; onPassed: () => Promise<void> }) {
+function QuizDrawer({
+  messageId,
+  persona,
+  onPassed,
+}: {
+  messageId: number;
+  persona: Persona;
+  onPassed: () => Promise<void>;
+}) {
   const [card, setCard] = useState<StoryExplainer | null>(null);
   const [choice, setChoice] = useState<number | null>(null);
   const [result, setResult] = useState<QuizResult | null>(null);
@@ -622,7 +739,12 @@ function QuizDrawer({ messageId, persona, onPassed }: { messageId: number; perso
   }
 
   if (error && !card) return <p className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>;
-  if (!card) return <p className="mt-3 rounded-2xl border border-line px-4 py-3 text-sm text-slate-500">Writing a 2-minute explainer…</p>;
+  if (!card)
+    return (
+      <p className="mt-3 rounded-2xl border border-line px-4 py-3 text-sm text-slate-500">
+        Writing a 2-minute explainer…
+      </p>
+    );
 
   const steps = [
     { label: "Core concept", text: card.concept },
@@ -632,12 +754,16 @@ function QuizDrawer({ messageId, persona, onPassed }: { messageId: number; perso
     <section className="mt-3 rounded-3xl border border-ink/15 bg-[#FBF9F5] p-5">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-copper">2-minute explainer</p>
-        <span className="mono text-[10px] text-slate-400">{card.source === "gemini" ? "by Gemini" : "quick version"}</span>
+        <span className="mono text-[10px] text-slate-400">
+          {card.source === "gemini" ? "by Gemini" : "quick version"}
+        </span>
       </div>
       <ol className="mt-3 space-y-3">
         {steps.map((step, position) => (
           <li key={step.label} className="flex gap-3">
-            <span className="mono grid h-6 w-6 shrink-0 place-items-center rounded-full bg-ink text-[11px] text-white">{position + 1}</span>
+            <span className="mono grid h-6 w-6 shrink-0 place-items-center rounded-full bg-ink text-[11px] text-white">
+              {position + 1}
+            </span>
             <div>
               <p className="text-xs font-semibold text-ink">{step.label}</p>
               <p className="text-sm leading-6 text-slate-700">{step.text}</p>
@@ -645,16 +771,28 @@ function QuizDrawer({ messageId, persona, onPassed }: { messageId: number; perso
           </li>
         ))}
         <li className="flex gap-3">
-          <span className="mono grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand text-[11px] text-white">3</span>
+          <span className="mono grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand text-[11px] text-white">
+            3
+          </span>
           <fieldset className="min-w-0 flex-1" disabled={checking || Boolean(result?.correct)}>
             <legend className="text-xs font-semibold text-ink">Quick check</legend>
             <p className="text-sm leading-6 text-slate-700">{card.question}</p>
             <div className="mt-2 space-y-1.5">
               {card.options.map((option, position) => {
                 const picked = choice === position;
-                const marked = result && picked ? (result.correct ? "border-brand bg-[#E7F3EF]" : "border-rose-300 bg-rose-50") : picked ? "border-ink bg-white" : "border-line bg-white";
+                const marked =
+                  result && picked
+                    ? result.correct
+                      ? "border-brand bg-[#E7F3EF]"
+                      : "border-rose-300 bg-rose-50"
+                    : picked
+                      ? "border-ink bg-white"
+                      : "border-line bg-white";
                 return (
-                  <label key={option} className={`flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2 text-sm transition ${marked}`}>
+                  <label
+                    key={option}
+                    className={`flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2 text-sm transition ${marked}`}
+                  >
                     <input
                       type="radio"
                       name={`quiz-${messageId}`}
@@ -678,7 +816,10 @@ function QuizDrawer({ messageId, persona, onPassed }: { messageId: number; perso
           <p className={`text-sm ${result.correct ? "text-brand" : "text-rose-700"}`}>
             {result.correct ? "Correct. " : "Not quite. Try another option. "}
             {result.correct && result.why}
-            {result.correct && result.xp_awarded > 0 && result.skill && ` +${result.xp_awarded} XP to ${result.skill} (now ${result.skill_score}).`}
+            {result.correct &&
+              result.xp_awarded > 0 &&
+              result.skill &&
+              ` +${result.xp_awarded} XP to ${result.skill} (now ${result.skill_score}).`}
             {result.correct && result.already_passed && " XP was already counted for this story."}
             {result.correct &&
               result.skill_score === null &&
@@ -687,7 +828,11 @@ function QuizDrawer({ messageId, persona, onPassed }: { messageId: number; perso
                 : " This story has no linked skill, so no XP this time.")}
           </p>
         ) : (
-          <p className="text-xs text-slate-500">{card.quiz_passed ? "You passed this one before. Answer again to review." : "A correct answer adds XP to the linked skill."}</p>
+          <p className="text-xs text-slate-500">
+            {card.quiz_passed
+              ? "You passed this one before. Answer again to review."
+              : "A correct answer adds XP to the linked skill."}
+          </p>
         )}
         {!result?.correct && (
           <button
@@ -712,7 +857,8 @@ function SentimentTab({ analysis, onOpen }: { analysis: InterestAnalysis; onOpen
     [analysis.rows, filter, sort],
   );
   if (analysis.total === 0) return <Empty text="No stories yet, so there is no tone to show." />;
-  const mood = analysis.average_sentiment > 15 ? "mostly upbeat" : analysis.average_sentiment < -15 ? "mostly worried" : "mixed";
+  const mood =
+    analysis.average_sentiment > 15 ? "mostly upbeat" : analysis.average_sentiment < -15 ? "mostly worried" : "mixed";
 
   return (
     <div className="space-y-4">
@@ -745,7 +891,8 @@ function SentimentTab({ analysis, onOpen }: { analysis: InterestAnalysis; onOpen
           <p className="mt-1 text-lg text-ink">This topic reads {mood}.</p>
           <ScoreMeter value={analysis.average_sentiment} />
           <p className="mt-3 text-xs text-slate-500">
-            Average tone {analysis.average_sentiment} on a scale from −100 to 100. Average match with your topic {analysis.average_relevance}.
+            Average tone {analysis.average_sentiment} on a scale from −100 to 100. Average match with your topic{" "}
+            {analysis.average_relevance}.
           </p>
         </div>
       </div>
@@ -753,11 +900,18 @@ function SentimentTab({ analysis, onOpen }: { analysis: InterestAnalysis; onOpen
       <div className="overflow-hidden rounded-3xl border border-line bg-white">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
           <p className="text-sm font-semibold text-ink">
-            Every story {filter !== "All" && <span className="font-normal text-slate-500">· showing {filter.toLowerCase()} only</span>}
+            Every story{" "}
+            {filter !== "All" && (
+              <span className="font-normal text-slate-500">· showing {filter.toLowerCase()} only</span>
+            )}
           </p>
           <div className="flex gap-1 rounded-full bg-[#F3EEE6] p-1 text-xs">
             {(["sentiment_score", "relevance_score"] as SortKey[]).map((key) => (
-              <button key={key} onClick={() => setSort(key)} className={`rounded-full px-3 py-1 font-semibold ${sort === key ? "bg-white text-ink shadow-card" : "text-slate-500"}`}>
+              <button
+                key={key}
+                onClick={() => setSort(key)}
+                className={`rounded-full px-3 py-1 font-semibold ${sort === key ? "bg-white text-ink shadow-card" : "text-slate-500"}`}
+              >
                 {key === "sentiment_score" ? "Sort by tone" : "Sort by match"}
               </button>
             ))}
@@ -778,14 +932,20 @@ function SentimentTab({ analysis, onOpen }: { analysis: InterestAnalysis; onOpen
               {rows.map((row) => {
                 const tone = SENTIMENT_STYLE[row.sentiment] ?? SENTIMENT_STYLE.Neutral;
                 return (
-                  <tr key={row.id} onClick={() => onOpen(row.id)} className="cursor-pointer border-t border-line transition hover:bg-[#FBF9F5]">
+                  <tr
+                    key={row.id}
+                    onClick={() => onOpen(row.id)}
+                    className="cursor-pointer border-t border-line transition hover:bg-[#FBF9F5]"
+                  >
                     <td className="px-4 py-3">
                       <p className={`leading-5 text-ink ${row.is_read ? "" : "font-semibold"}`}>{row.title}</p>
                       <p className="text-[11px] text-slate-400">{row.source}</p>
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600">{row.topic}</td>
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone.wash} ${tone.text}`}>{row.sentiment}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone.wash} ${tone.text}`}>
+                        {row.sentiment}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <ScoreMeter value={row.sentiment_score} compact />
@@ -810,7 +970,8 @@ function TopicsTab({ analysis, onOpen }: { analysis: InterestAnalysis; onOpen: (
       <div className="rounded-3xl border border-line bg-white p-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">How the stories group</p>
         <p className="mt-1 text-sm text-slate-600">
-          {analysis.clusters.length} {analysis.clusters.length === 1 ? "group" : "groups"} inside this interest. Each bar shows how many stories it holds and their tone.
+          {analysis.clusters.length} {analysis.clusters.length === 1 ? "group" : "groups"} inside this interest. Each
+          bar shows how many stories it holds and their tone.
         </p>
         <div className="mt-4 space-y-3">
           {analysis.clusters.map((cluster) => (
@@ -827,10 +988,13 @@ function TopicsTab({ analysis, onOpen }: { analysis: InterestAnalysis; onOpen: (
                 <div>
                   <h3 className="text-lg leading-tight text-ink">{cluster.label}</h3>
                   <p className="mt-0.5 text-xs text-slate-500">
-                    {cluster.count} {cluster.count === 1 ? "story" : "stories"} · average tone {cluster.average_sentiment}
+                    {cluster.count} {cluster.count === 1 ? "story" : "stories"} · average tone{" "}
+                    {cluster.average_sentiment}
                   </p>
                 </div>
-                <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${tone.wash} ${tone.text}`}>{cluster.dominant_sentiment}</span>
+                <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${tone.wash} ${tone.text}`}>
+                  {cluster.dominant_sentiment}
+                </span>
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {cluster.keywords.map((word) => (
@@ -846,7 +1010,10 @@ function TopicsTab({ analysis, onOpen }: { analysis: InterestAnalysis; onOpen: (
                   const rowTone = SENTIMENT_STYLE[row.sentiment] ?? SENTIMENT_STYLE.Neutral;
                   return (
                     <li key={id}>
-                      <button onClick={() => onOpen(id)} className="flex w-full items-start gap-2 py-2.5 text-left text-sm hover:text-brand">
+                      <button
+                        onClick={() => onOpen(id)}
+                        className="flex w-full items-start gap-2 py-2.5 text-left text-sm hover:text-brand"
+                      >
                         <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: rowTone.bar }} />
                         <span className="leading-5">{row.title}</span>
                       </button>
@@ -871,11 +1038,20 @@ function ClusterRow({ cluster, total }: { cluster: InterestCluster; total: numbe
           {cluster.count} · {Math.round((cluster.count / total) * 100)}%
         </span>
       </div>
-      <div className="flex h-3 overflow-hidden rounded-full bg-[#F3EEE6]" style={{ width: `${Math.max(14, (cluster.count / total) * 100)}%` }}>
+      <div
+        className="flex h-3 overflow-hidden rounded-full bg-[#F3EEE6]"
+        style={{ width: `${Math.max(14, (cluster.count / total) * 100)}%` }}
+      >
         {SENTIMENT_ORDER.map((label) => {
           const count = cluster.sentiments[label] ?? 0;
           if (!count) return null;
-          return <div key={label} title={`${label} ${count}`} style={{ width: `${(count / cluster.count) * 100}%`, background: SENTIMENT_STYLE[label].bar }} />;
+          return (
+            <div
+              key={label}
+              title={`${label} ${count}`}
+              style={{ width: `${(count / cluster.count) * 100}%`, background: SENTIMENT_STYLE[label].bar }}
+            />
+          );
         })}
       </div>
     </div>
@@ -884,13 +1060,21 @@ function ClusterRow({ cluster, total }: { cluster: InterestCluster; total: numbe
 
 function ScoreMeter({ value, compact = false }: { value: number; compact?: boolean }) {
   const clamped = Math.max(-100, Math.min(100, value));
-  const color = clamped > 15 ? SENTIMENT_STYLE.Positive.bar : clamped < -15 ? SENTIMENT_STYLE.Critical.bar : SENTIMENT_STYLE.Watchful.bar;
+  const color =
+    clamped > 15
+      ? SENTIMENT_STYLE.Positive.bar
+      : clamped < -15
+        ? SENTIMENT_STYLE.Critical.bar
+        : SENTIMENT_STYLE.Watchful.bar;
   const width = Math.abs(clamped) / 2;
   return (
     <div className={`flex items-center gap-2 ${compact ? "" : "mt-3"}`}>
       <div className={`relative overflow-hidden rounded-full bg-[#F3EEE6] ${compact ? "h-1.5 w-24" : "h-2.5 w-full"}`}>
         <div className="absolute inset-y-0 left-1/2 w-px bg-slate-300" />
-        <div className="absolute inset-y-0 rounded-full" style={{ background: color, width: `${width}%`, left: clamped >= 0 ? "50%" : `${50 - width}%` }} />
+        <div
+          className="absolute inset-y-0 rounded-full"
+          style={{ background: color, width: `${width}%`, left: clamped >= 0 ? "50%" : `${50 - width}%` }}
+        />
       </div>
       <span className="mono w-9 text-right text-[11px] text-slate-500">{clamped}</span>
     </div>
@@ -898,5 +1082,9 @@ function ScoreMeter({ value, compact = false }: { value: number; compact?: boole
 }
 
 function Empty({ text }: { text: string }) {
-  return <p className="rounded-3xl border border-dashed border-line bg-white px-5 py-12 text-center text-sm text-slate-500">{text}</p>;
+  return (
+    <p className="rounded-3xl border border-dashed border-line bg-white px-5 py-12 text-center text-sm text-slate-500">
+      {text}
+    </p>
+  );
 }

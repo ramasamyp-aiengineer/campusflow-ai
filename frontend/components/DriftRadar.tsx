@@ -22,10 +22,18 @@ export function DriftRadar({ persona }: { persona: Persona }) {
     };
   }, [persona]);
 
-  if (error) return <p className="surface mb-4 px-4 py-3 text-sm text-slate-500">Curriculum drift radar is unavailable: {error}</p>;
-  if (!radar) return <p className="surface mb-4 px-4 py-3 text-sm text-slate-500">Comparing industry news with the syllabus…</p>;
+  if (error)
+    return (
+      <p className="surface mb-4 px-4 py-3 text-sm text-slate-500">Curriculum drift radar is unavailable: {error}</p>
+    );
+  if (!radar)
+    return <p className="surface mb-4 px-4 py-3 text-sm text-slate-500">Comparing industry news with the syllabus…</p>;
   if (radar.total_stories === 0) {
-    return <p className="surface mb-4 px-4 py-3 text-sm text-slate-500">No student interest stories yet, so there is nothing to compare with the syllabus.</p>;
+    return (
+      <p className="surface mb-4 px-4 py-3 text-sm text-slate-500">
+        No student interest stories yet, so there is nothing to compare with the syllabus.
+      </p>
+    );
   }
   const widest = Math.max(1, ...radar.trends.map((trend) => trend.share));
 
@@ -36,7 +44,8 @@ export function DriftRadar({ persona }: { persona: Persona }) {
           <Radar size={16} className="text-copper" /> Curriculum drift radar
         </h2>
         <p className="text-xs text-slate-500">
-          {radar.total_stories} stories from {radar.students} {radar.students === 1 ? "student" : "students"}, names withheld
+          {radar.total_stories} stories from {radar.students} {radar.students === 1 ? "student" : "students"}, names
+          withheld
         </p>
       </div>
 
@@ -46,10 +55,16 @@ export function DriftRadar({ persona }: { persona: Persona }) {
             <li
               key={alert.title}
               className={`flex gap-2 rounded-xl border px-3 py-2 text-sm ${
-                alert.level === "critical" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-amber-200 bg-amber-50 text-amber-900"
+                alert.level === "critical"
+                  ? "border-rose-200 bg-rose-50 text-rose-900"
+                  : "border-amber-200 bg-amber-50 text-amber-900"
               }`}
             >
-              {alert.level === "critical" ? <AlertTriangle size={16} className="mt-0.5 shrink-0" /> : <TrendingUp size={16} className="mt-0.5 shrink-0" />}
+              {alert.level === "critical" ? (
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+              ) : (
+                <TrendingUp size={16} className="mt-0.5 shrink-0" />
+              )}
               <span>
                 <span className="font-semibold">{alert.title}.</span> {alert.detail}
               </span>
@@ -60,13 +75,17 @@ export function DriftRadar({ persona }: { persona: Persona }) {
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_260px]">
         <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Trending industry skills vs current syllabus</p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            Trending industry skills vs current syllabus
+          </p>
           <div className="space-y-2.5">
             {radar.trends.map((trend) => (
               <div key={trend.term}>
                 <div className="mb-1 flex items-center justify-between gap-2 text-sm">
                   <span className="font-medium text-ink">{trend.term}</span>
-                  <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${trend.in_syllabus ? "text-emerald-700" : "text-rose-700"}`}>
+                  <span
+                    className={`inline-flex items-center gap-1 text-[11px] font-semibold ${trend.in_syllabus ? "text-emerald-700" : "text-rose-700"}`}
+                  >
                     {trend.in_syllabus ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
                     {trend.in_syllabus ? "In syllabus" : "Not in syllabus"}
                   </span>
@@ -74,7 +93,10 @@ export function DriftRadar({ persona }: { persona: Persona }) {
                 <div className="h-2 overflow-hidden rounded-full bg-[#F3EEE6]">
                   <div
                     className="h-full rounded-full"
-                    style={{ width: `${Math.max(6, (trend.share / widest) * 100)}%`, background: trend.in_syllabus ? "#0E7C66" : "#C46B2C" }}
+                    style={{
+                      width: `${Math.max(6, (trend.share / widest) * 100)}%`,
+                      background: trend.in_syllabus ? "#0E7C66" : "#C46B2C",
+                    }}
                   />
                 </div>
                 <p className="mt-0.5 text-[11px] text-slate-500">

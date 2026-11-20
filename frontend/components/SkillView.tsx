@@ -11,7 +11,9 @@ export function SkillView({ graph }: { graph: SkillGraph | null }) {
         <div>
           <p className="mono text-xs text-slate-500">{graph.anon_token}</p>
           <h1 className="text-xl font-semibold">Skill graph</h1>
-          <p className="text-sm text-slate-500">{graph.student_name} · a score is recorded evidence. New mastery is added when faculty co-sign an AI review.</p>
+          <p className="text-sm text-slate-500">
+            {graph.student_name} · a score is recorded evidence. New mastery is added when faculty co-sign an AI review.
+          </p>
         </div>
         <div className="flex items-center gap-3 rounded-2xl border border-line bg-white px-3 py-2">
           <Ring value={graph.verified_skill_score} color={scoreColor(graph.verified_skill_score)} />
@@ -35,7 +37,10 @@ export function SkillView({ graph }: { graph: SkillGraph | null }) {
                 </span>
               </div>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                <div className="h-full rounded-full" style={{ width: `${skill.proficiency_score}%`, background: scoreColor(skill.proficiency_score) }} />
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${skill.proficiency_score}%`, background: scoreColor(skill.proficiency_score) }}
+                />
               </div>
               <p className="mt-2 text-xs text-slate-500">
                 {skill.verified_lwi_count} linked ticket{skill.verified_lwi_count === 1 ? "" : "s"}

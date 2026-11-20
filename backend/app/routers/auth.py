@@ -123,7 +123,7 @@ def _demo_email_for_persona(persona: str) -> str | None:
 @router.post("/demo-switch", response_model=LoginOut)
 @limiter.limit("20/minute")
 def demo_switch(request: Request, response: Response, body: DemoSwitchIn, db: Session = Depends(get_db)) -> LoginOut:
-    """Hackathon persona switch. Password stays server-side; never embed it in NEXT_PUBLIC_*. """
+    """Hackathon persona switch. Password stays server-side; never embed it in NEXT_PUBLIC_*."""
     settings = get_settings()
     if not settings.demo_password.strip():
         raise HTTPException(status_code=404, detail="Demo switch is disabled")

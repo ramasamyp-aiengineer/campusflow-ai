@@ -47,7 +47,8 @@ export default function HomePage() {
     setUser(null);
   }
 
-  if (checking) return <div className="grid h-screen place-items-center text-sm text-slate-500">Opening CampusFlow…</div>;
+  if (checking)
+    return <div className="grid h-screen place-items-center text-sm text-slate-500">Opening CampusFlow…</div>;
   if (!user) {
     return (
       <LoginView
